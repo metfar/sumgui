@@ -1,2 +1,159 @@
-# sumgui
+# SumGUI / ΣGUI alpha 0.0.1a15
+
 A tiny, portable and beginner-friendly GUI toolkit for Python and Pygame.
+
+SumGUI is inspired by the spirit of home computing:
+
+```text
+Learn.
+Create.
+Share.
+Improve.
+```
+
+The goal is to make GUI programming accessible again. You should be able to create useful applications without learning a huge framework first.
+
+```text
+Simple enough to learn in one afternoon.
+Powerful enough to build real applications.
+```
+
+SumGUI does not try to replace Qt, GTK, Kivy or wx. It tries to make small, practical, hackable, shareable GUI programs easy again.
+
+## Installation
+
+For normal users, install SumGUI locally without administrator permissions:
+
+```bash
+python -m pip install --user .
+```
+
+For development:
+
+```bash
+python -m pip install --user -e .
+```
+
+Using a virtual environment:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install .
+```
+
+System-wide installation is possible, but usually not recommended:
+
+```bash
+sudo python -m pip install .
+```
+
+The `--user` option installs SumGUI in the current user's Python environment, without writing to `/usr/local/lib`.
+
+## First program
+
+```python
+#!/usr/bin/env python3
+
+from sumgui.easy import *;
+
+window("My first SumGUI program", width=720, height=720, theme="ZX");
+
+say("READY.", 20, 20, w=300, h=40, font_size=24, bold=True);
+button("HELLO", 20, 80, 180, 60, do=lambda: alert("Hello from SumGUI!"));
+
+start();
+```
+
+## Run demos
+
+```bash
+python examples/demo_full.py
+python examples/demo_bgi_canvas.py
+python examples/demo_quick_start.py
+python examples/demo_themes.py
+python examples/demo_colorpicker.py
+```
+
+## Included in this alpha
+
+- Application/easy API
+- Themes: ZX, DOS, C64, MSX, Dark, Light
+- Button, Label, TextArea, Slider, ToolBar, StatusBar
+- GridWidget with color, text or image per cell
+- PaletteWidget and ColorPicker
+- CanvasArea with simple 2D primitives
+- BarChart, LineChart, PieChart, ScatterChart
+- MessageBox
+- Key repeat, tab focus order, mouse capture
+- Unicode text input through `pygame.TEXTINPUT`
+- Clipboard shortcuts in text widgets:
+  - `Ctrl+C` / `Ctrl+Insert` copy
+  - `Ctrl+X` / `Shift+Delete` cut
+  - `Ctrl+V` / `Shift+Insert` paste
+
+## Self-documenting commands
+
+```python
+from sumgui import command_help;
+print(command_help());
+```
+
+or with the easy layer:
+
+```python
+from sumgui.easy import *;
+print(keymap_help());
+```
+
+## Canvas example
+
+```python
+canvas.line(10, 10, 200, 120);
+canvas.stroke_rect(30, 40, 140, 80);
+canvas.fill_circle(220, 100, 30);
+canvas.text(20, 180, "SumGUI");
+```
+
+## Why GPLv2-or-later?
+
+Because the spirit is:
+
+```text
+Use it.
+Study it.
+Modify it.
+Share it.
+```
+
+## Planned for later
+
+The 3D/voxel widgets are intentionally left for a later release. The 2D toolkit needs to stay solid first.
+
+Planned future work:
+
+- VoxelGridWidget
+- Nav3DPad / RotationPad
+- Remappable KeyMap UI
+- TreeView, PropertyGrid, Tabs and Splitter
+- More file dialogs
+- More examples and tutorials
+
+
+## Text selection shortcuts
+
+Text widgets support mouse drag selection and keyboard selection.
+
+```text
+Shift+Left / Shift+Right       Extend selection by character
+Shift+Up / Shift+Down          Extend selection by line
+Shift+Home / Shift+End         Extend selection to line start/end
+Shift+PageUp / Shift+PageDown  Extend selection by page
+Ctrl+A                         Select all
+Ctrl+C / Ctrl+Insert           Copy
+Ctrl+X / Shift+Delete          Cut
+Ctrl+V / Shift+Insert          Paste
+```
+
+<p align=center><b>- oOo -</b></p>
+
