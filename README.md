@@ -128,12 +128,15 @@ Share it.
 
 ## Planned for later
 
-The 2D toolkit needs to stay solid first.
+The 3D/voxel widgets are intentionally left for a later release. The 2D toolkit needs to stay solid first.
 
 Planned future work:
 
+- VoxelGridWidget
+- Nav3DPad / RotationPad
+- Remappable KeyMap UI
 - TreeView, PropertyGrid, Tabs and Splitter
-- More file dialogues
+- More file dialogs
 - More examples and tutorials
 
 

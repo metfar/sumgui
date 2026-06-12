@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sumgui"
+version = "0.0.1a15"
+description = "A tiny retro-flavored GUI toolkit for Pygame."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "GPL-2.0-or-later" }
+authors = [{ name = "William Martinez Bas", email = "metfar@gmail.com" }]
+dependencies = ["pygame>=2.0"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: User Interfaces",
+]
+
+[tool.setuptools.packages.find]
+include = ["sumgui*"]
