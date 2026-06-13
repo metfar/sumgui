@@ -64,6 +64,8 @@ button("HELLO", 20, 80, 180, 60, do=lambda: alert("Hello from SumGUI!"));
 
 start();
 ```
+![First program](docs/demo_first.png)
+
 
 ## Run demos
 
