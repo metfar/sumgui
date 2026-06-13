@@ -1,4 +1,4 @@
-# SumGUI / ΣGUI alpha 0.0.1a20
+# SumGUI / ΣGUI alpha 0.0.1a21
 
 A tiny, portable and beginner-friendly GUI toolkit for Python and Pygame.
 
@@ -11,7 +11,7 @@ Share.
 Improve.
 ```
 
-The goal is to make GUI programming accessible again. You should be able to create useful applications without having to learn a huge framework first.
+The goal is to make GUI programming accessible again. You should be able to create useful applications without learning a huge framework first.
 
 ```text
 Simple enough to learn in one afternoon.
@@ -65,19 +65,18 @@ button("HELLO", 20, 80, 180, 60, do=lambda: alert("Hello from SumGUI!"));
 start();
 ```
 
-![First GUI](docs/demo_first.png)
-
 ## Run demos
 
 ```bash
-python examples/demo_bgi-like_canvas.py
-python examples/demo_code_runner.py
-python examples/demo_code_textarea.py
-python examples/demo_colorpicker.py
-python examples/demo_first.py
-python examples/demo_full.py
-python examples/demo_quick_start.py
-python examples/demo_themes.py
+python examples/demo_bgi-like_canvas.py 
+python examples/demo_code_runner.py 
+python examples/demo_code_textarea.py 
+python examples/demo_colorpicker.py 
+python examples/demo_first.py 
+python examples/demo_full.py 
+python examples/demo_quick_start.py 
+python examples/demo_textinput_keyrepeat.py 
+python examples/demo_themes.py 
 ```
 
 ## Included in this alpha
@@ -85,7 +84,7 @@ python examples/demo_themes.py
 - Application/easy API
 - Themes: ZX, DOS, C64, MSX, Dark, Light
 - Button, Label, TextArea, Slider, ToolBar, StatusBar
-- GridWidget with colour, text or image per cell
+- GridWidget with color, text or image per cell
 - PaletteWidget and ColorPicker
 - CanvasArea with simple 2D primitives
 - BarChart, LineChart, PieChart, ScatterChart
@@ -110,21 +109,6 @@ or with the easy layer:
 from sumgui.easy import *;
 print(keymap_help());
 ```
-
-
-```
-Tab: Move focus to the next widget.
-Shift+Tab : Move focus to the previous widget.
-Enter / Space: Activate focused buttons or selected actions.
-Ctrl+C / Ctrl+Insert: Copy text from the focused text widget.
-Ctrl+X / Shift+Delete: Cut text from the focused text widget.
-Ctrl+V / Shift+Insert: Paste text into the focused text widget.
-Arrows: Move cursor, list selection, grid cursor, sliders or chart points.
-Home / End: Jump to the first/last position where supported.
-PageUp / PageDown: Move by pages where supported.
-Escape: Close demos/dialogs or exit the app.
-```
-
 
 ## Canvas example
 
@@ -154,7 +138,7 @@ Planned future work:
 
 - Remappable KeyMap UI
 - TreeView, PropertyGrid, Tabs and Splitter
-- More file dialogues
+- More file dialogs
 - More examples and tutorials
 
 
@@ -214,13 +198,20 @@ It can show stdout/stderr using terminal-style colours.
 python examples/demo_code_runner.py
 ```
 
-The demo includes a `TextArea` that serves as a tiny code editor, a `RUN` button, and a `TerminalArea` that displays the captured program output.
+The demo contains a `TextArea` used as a tiny code editor, a `RUN` button, and a `TerminalArea` showing the captured program output.
 
 This is intentionally simple and local. Running arbitrary code is dangerous; only execute code you trust.
 
 
+## 0.0.1a21 Text input fixes
+
+- Added `TextInput` widget.
+- Single-line inputs scroll horizontally while the cursor moves.
+- Cursor is clipped inside the field.
+- Backspace/Delete repeat through SumGUI key repeat.
+- Added `input_box()` and `easy.ask()` modal input helpers.
+- Added `examples/demo_textinput_keyrepeat.py`.
+
+
 <p align=center><b>- oOo -</b></p>
-
-
-
 

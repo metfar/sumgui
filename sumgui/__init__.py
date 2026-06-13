@@ -21,15 +21,15 @@
 #  
 #
 
-__version__ = "0.0.1a20";
+__version__ = "0.0.1a21";
 
 from .theme import C64_COLORS, DEFAULT_THEME, DOS_COLORS, MSX_COLORS, SPECTRUM_COLORS, THEMES, Theme, make_theme;
 from .scale import Scale;
 from .keymap import KeyMap, default_voxel_keymap;
-from .widgets import Button, CanvasArea, ColorPicker, GridCell, GridWidget, Label, PaletteWidget, Panel, Slider, StatusBar, TextArea, TerminalArea, ToolBar, Widget;
+from .widgets import Button, CanvasArea, ColorPicker, GridCell, GridWidget, Label, PaletteWidget, Panel, Slider, StatusBar, TextArea, TextInput, TerminalArea, ToolBar, Widget;
 from .easy import EasyApp;
 from .charts import BarChart, LineChart, PieChart, ScatterChart;
-from .dialogs import message_box;
+from .dialogs import input_box, message_box;
 from .clipboard import get_clipboard_text, set_clipboard_text;
 from .commands import command_help, command_list;
 from .voxel import Voxel, VoxelFace, VoxelGridModel, VoxelGridWidgetSpec;

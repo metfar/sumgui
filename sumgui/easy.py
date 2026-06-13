@@ -23,12 +23,12 @@
 
 import pygame;
 
-from .dialogs import message_box;
+from .dialogs import input_box, message_box;
 from .keyrepeat import enable_key_repeat, get_events;
 from .scale import Scale;
 from .theme import DEFAULT_THEME, make_theme;
 from .commands import command_help, command_list;
-from .widgets import Button, CanvasArea, Label, Panel, TextArea, TerminalArea;
+from .widgets import Button, CanvasArea, Label, Panel, TextArea, TextInput, TerminalArea;
 
 _app = None;
 
@@ -125,6 +125,16 @@ def button(text, x, y, w=160, h=50, do=None, font_size=None, bold=True):
     return current.add(Button(pygame.Rect(x, y, w, h), text, use_font, callback, current.theme));
 
 
+def inputline(x, y, w, h, text="", placeholder="", font_size=None, max_length=-1, show_h_scrollbar=False):
+    current = app();
+    use_font = current.make_font(font_size or current.font_size);
+    return current.add(TextInput(pygame.Rect(x, y, w, h), use_font, text=text, placeholder=placeholder, max_length=max_length, theme=current.theme, show_h_scrollbar=show_h_scrollbar));
+
+
+def textinput(x, y, w, h, text="", placeholder="", font_size=None, max_length=-1, show_h_scrollbar=False):
+    return inputline(x, y, w, h, text=text, placeholder=placeholder, font_size=font_size, max_length=max_length, show_h_scrollbar=show_h_scrollbar);
+
+
 def textarea(x, y, w, h, text="", font_size=None, accepts_tab=True, tab_size=4, syntax=None, show_v_scrollbar=True, show_h_scrollbar=True):
     current = app();
     use_font = current.make_font(font_size or current.font_size);
@@ -145,6 +155,11 @@ def terminal(x, y, w, h, text="", font_size=None, show_v_scrollbar=True, show_h_
 def alert(message, title="SumGUI"):
     current = app();
     return message_box(current.screen, current.clock, title, message, current.theme);
+
+
+def ask(title="Input", message="", default_text="", max_length=-1):
+    current = app();
+    return input_box(current.screen, current.clock, title, message, default_text, current.theme, max_length=max_length);
 
 
 def commands():

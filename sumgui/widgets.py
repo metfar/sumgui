@@ -1856,6 +1856,91 @@ class TextArea(Widget):
         self.draw_scrollbar(screen);
 
 
+class TextInput(TextArea):
+    def __init__(self, rect, font, text="", placeholder="", editable=True, max_length=-1, theme=None, show_h_scrollbar=False, accepts_tab=False, tab_index=0):
+        super().__init__(
+            rect,
+            font,
+            text=text,
+            multiline=False,
+            show_scrollbar=False,
+            editable=editable,
+            max_lines=1,
+            max_cols=max_length,
+            theme=theme,
+            show_v_scrollbar=False,
+            show_h_scrollbar=show_h_scrollbar,
+            accepts_tab=accepts_tab,
+            tab_index=tab_index,
+        );
+        self.placeholder = placeholder;
+        self.max_length = max_length;
+
+    def value(self):
+        return self.lines[0] if self.lines else "";
+
+    def set_value(self, text):
+        self.lines = [str(text)];
+        if self.max_length != -1:
+            self.lines[0] = self.lines[0][:self.max_length];
+        self.cursor_row = 0;
+        self.cursor_col = len(self.lines[0]);
+        self.clear_selection();
+        self.ensure_visible();
+
+    def text(self):
+        return self.value();
+
+    def set_text(self, text):
+        self.set_value(text);
+
+    def newline(self):
+        return None;
+
+    def insert_text(self, text):
+        if not self.editable:
+            return;
+        text = str(text).replace("\r", "").replace("\n", "");
+        if not text:
+            return;
+        if self.has_selection():
+            self.delete_selection();
+        for char in text:
+            line = self.lines[0];
+            if self.max_length != -1 and len(line) >= self.max_length:
+                break;
+            self.lines[0] = line[:self.cursor_col] + char + line[self.cursor_col:];
+            self.cursor_col += 1;
+        self.cursor_row = 0;
+        self.clear_selection();
+        self.ensure_visible();
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, self.theme.panel, self.rect, border_radius=8);
+        pygame.draw.rect(screen, self.theme.cursor if self.active else self.theme.line, self.rect, 3 if self.active else 2, border_radius=8);
+        line_h = self.font.get_height();
+        char_w = max(1, self.font.size("M")[0]);
+        text_rect = self.content_rect();
+        def draw_inside():
+            cols = self.visible_cols();
+            line = self.lines[0] if self.lines else "";
+            if line:
+                visible = self.visible_text_slice(line, cols);
+                self.draw_selection_for_row(screen, text_rect, 0, text_rect.y, char_w, line_h);
+                self.draw_code_line(screen, visible, text_rect.x, text_rect.y, text_rect);
+            elif self.placeholder:
+                draw_clipped_text(screen, self.font, self.placeholder, getattr(self.theme, "muted", self.theme.line), pygame.Rect(text_rect.x, text_rect.y, text_rect.width, line_h));
+            if self.active and self.cursor_visible:
+                visual_col = self.visual_col_from_index(line, self.cursor_col);
+                cx = text_rect.x + max(0, visual_col - self.scroll_col) * char_w;
+                cy = text_rect.y;
+                cursor_rect = pygame.Rect(cx, cy + 2, 3, line_h - 4);
+                if cursor_rect.right >= text_rect.x and cursor_rect.left <= text_rect.right:
+                    pygame.draw.rect(screen, self.theme.cursor, cursor_rect.clip(text_rect));
+        with_clip(screen, text_rect, draw_inside);
+        self.draw_horizontal_scrollbar(screen);
+
+
 class ColorPicker(Widget):
     def __init__(self, rect, font, mode="palette16", colors=None, on_change=None, theme=None, tab_index=0):
         super().__init__(rect, focusable=True, tab_index=tab_index);
