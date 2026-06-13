@@ -1,2 +1,0 @@
-pygame>=2.0
-clipboard>=0.0.4
