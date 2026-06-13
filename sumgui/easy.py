@@ -125,10 +125,10 @@ def button(text, x, y, w=160, h=50, do=None, font_size=None, bold=True):
     return current.add(Button(pygame.Rect(x, y, w, h), text, use_font, callback, current.theme));
 
 
-def textarea(x, y, w, h, text="", font_size=None, accepts_tab=True):
+def textarea(x, y, w, h, text="", font_size=None, accepts_tab=True, tab_size=4, syntax="plain", code_style=None):
     current = app();
     use_font = current.make_font(font_size or current.font_size);
-    return current.add(TextArea(pygame.Rect(x, y, w, h), use_font, text, True, True, True, -1, -1, current.theme, show_v_scrollbar=True, show_h_scrollbar=True, accepts_tab=accepts_tab));
+    return current.add(TextArea(pygame.Rect(x, y, w, h), use_font, text, True, True, True, -1, -1, current.theme, show_v_scrollbar=True, show_h_scrollbar=True, accepts_tab=accepts_tab, tab_size=tab_size, syntax=syntax, code_style=code_style));
 
 
 def canvas(x, y, w, h, interactive=True, auto_redraw=True, on_event=None, on_draw=None):

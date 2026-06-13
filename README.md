@@ -1,4 +1,4 @@
-# SumGUI / ΣGUI alpha 0.0.1a15
+# SumGUI / ΣGUI alpha 0.0.1a16
 
 A tiny, portable and beginner-friendly GUI toolkit for Python and Pygame.
 
@@ -153,5 +153,28 @@ Ctrl+X / Shift+Delete          Cut
 Ctrl+V / Shift+Insert          Paste
 ```
 
-<p align=center><b>- oOo -</b></p>
 
+## TextArea tabs and code colours
+
+`TextArea` can accept real tab characters and render them as tab stops, useful for source code:
+
+```python
+editor = TextArea(rect, font, text="def hello():\n\tprint('hi')", accepts_tab=True, tab_size=4);
+```
+
+A lightweight vi-like colour style is available for code-oriented text areas:
+
+```python
+editor = TextArea(rect, font, text=code, accepts_tab=True, tab_size=4, syntax="python", code_style="vi");
+```
+
+In the easy API:
+
+```python
+textarea(20, 20, 500, 300, text=code, accepts_tab=True, tab_size=4, syntax="python");
+```
+
+Tabs are stored as `\t`, but displayed with alignment. They are not drawn as strange control characters.
+
+
+<p align=center><b>- oOo -</b></p>

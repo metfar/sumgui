@@ -21,7 +21,6 @@
 #  
 #
 
-import keyword;
 import pygame;
 from .theme import C64_COLORS, DEFAULT_THEME, DOS_COLORS, MSX_COLORS, SPECTRUM_COLORS;
 from .clipboard import get_clipboard_text, set_clipboard_text;
@@ -247,75 +246,6 @@ class Panel(Widget):
     def update(self, dt):
         for widget in self.children:
             widget.update(dt);
-
-    def syntax_colors(self):
-        return {
-            "normal": self.theme.text,
-            "keyword": getattr(self.theme, "accent", self.theme.cursor),
-            "string": getattr(self.theme, "warning", self.theme.button),
-            "comment": self.theme.muted,
-            "number": getattr(self.theme, "cursor", self.theme.text),
-        };
-
-    def is_code_syntax_enabled(self):
-        return self.syntax not in (None, "", "plain", False);
-
-    def split_code_segments(self, visible_text):
-        if not self.is_code_syntax_enabled():
-            return [(visible_text, self.theme.text)];
-        colors = self.syntax_colors();
-        result = [];
-        index = 0;
-        while index < len(visible_text):
-            char = visible_text[index];
-            if char == "#":
-                result.append((visible_text[index:], colors["comment"]));
-                break;
-            if char in ('"', "'"):
-                quote = char;
-                end = index + 1;
-                escaped = False;
-                while end < len(visible_text):
-                    if visible_text[end] == quote and not escaped:
-                        end += 1;
-                        break;
-                    escaped = (visible_text[end] == "\\" and not escaped);
-                    if visible_text[end] != "\\":
-                        escaped = False;
-                    end += 1;
-                result.append((visible_text[index:end], colors["string"]));
-                index = end;
-                continue;
-            if char.isdigit():
-                end = index + 1;
-                while end < len(visible_text) and (visible_text[end].isdigit() or visible_text[end] in ".xXabcdefABCDEF"):
-                    end += 1;
-                result.append((visible_text[index:end], colors["number"]));
-                index = end;
-                continue;
-            if char.isalpha() or char == "_":
-                end = index + 1;
-                while end < len(visible_text) and (visible_text[end].isalnum() or visible_text[end] == "_"):
-                    end += 1;
-                word = visible_text[index:end];
-                color = colors["keyword"] if keyword.iskeyword(word) else colors["normal"];
-                result.append((word, color));
-                index = end;
-                continue;
-            result.append((char, colors["normal"]));
-            index += 1;
-        return result;
-
-    def draw_code_line(self, screen, text_rect, y, visible_text, line_h):
-        x = text_rect.x;
-        for text, color in self.split_code_segments(visible_text):
-            if not text:
-                continue;
-            rendered = self.font.render(text, True, color);
-            if x >= text_rect.right:
-                return;
-            screen.blit(rendered, (x, y));
-            x += rendered.get_width();
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.theme.panel, self.rect, border_radius=8);
@@ -597,7 +527,7 @@ class GridWidget(Widget):
 
 
 class TextArea(Widget):
-    def __init__(self, rect, font, text="", multiline=True, show_scrollbar=True, editable=True, max_lines=-1, max_cols=-1, theme=None, show_v_scrollbar=None, show_h_scrollbar=False, accepts_tab=False, tab_index=0, tab_size=4, syntax="plain", code_style=None):
+    def __init__(self, rect, font, text="", multiline=True, show_scrollbar=True, editable=True, max_lines=-1, max_cols=-1, theme=None, show_v_scrollbar=None, show_h_scrollbar=False, accepts_tab=False, tab_index=0):
         super().__init__(rect, focusable=True, tab_index=tab_index, accepts_tab=accepts_tab);
         self.font = font;
         self.lines = text.split("\n") if text else [""];
@@ -623,9 +553,6 @@ class TextArea(Widget):
         self.drag_scroll = None;
         self.drag_selecting = False;
         self.selection_anchor = None;
-        self.tab_size = max(1, int(tab_size));
-        self.syntax = syntax or "plain";
-        self.code_style = code_style or ("vi" if self.syntax not in (None, "", "plain") else "plain");
 
     def set_focus(self, focused=True):
         super().set_focus(focused);
@@ -760,36 +687,8 @@ class TextArea(Widget):
         self.cursor_col = len(self.lines[self.cursor_row]);
         self.ensure_visible();
 
-    def visual_line(self, row):
-        if row < 0 or row >= len(self.lines):
-            return "";
-        return self.lines[row].expandtabs(self.tab_size);
-
-    def raw_col_to_visual_col(self, line, raw_col):
-        raw_col = max(0, min(len(line), int(raw_col)));
-        return len(line[:raw_col].expandtabs(self.tab_size));
-
-    def visual_col_to_raw_col(self, line, visual_col):
-        visual_col = max(0, int(visual_col));
-        current_visual = 0;
-        for index, char in enumerate(line):
-            if current_visual >= visual_col:
-                return index;
-            if char == "\t":
-                next_visual = ((current_visual // self.tab_size) + 1) * self.tab_size;
-                if visual_col < next_visual:
-                    return index;
-                current_visual = next_visual;
-            else:
-                current_visual += 1;
-        return len(line);
-
-    def visible_visual_text(self, line):
-        visual = line.expandtabs(self.tab_size);
-        return visual[self.scroll_col:self.scroll_col + self.visible_cols()];
-
     def max_line_length(self):
-        return max([len(line.expandtabs(self.tab_size)) for line in self.lines] + [0]);
+        return max([len(line) for line in self.lines] + [0]);
 
     def content_rect(self):
         rect = self.rect.inflate(-self.padding * 2, -self.padding * 2);
@@ -825,11 +724,10 @@ class TextArea(Widget):
             self.scroll_row = self.cursor_row;
         if self.cursor_row >= self.scroll_row + rows:
             self.scroll_row = self.cursor_row - rows + 1;
-        visual_col = self.raw_col_to_visual_col(self.lines[self.cursor_row], self.cursor_col);
-        if visual_col < self.scroll_col:
-            self.scroll_col = visual_col;
-        if visual_col >= self.scroll_col + cols:
-            self.scroll_col = visual_col - cols + 1;
+        if self.cursor_col < self.scroll_col:
+            self.scroll_col = self.cursor_col;
+        if self.cursor_col >= self.scroll_col + cols:
+            self.scroll_col = self.cursor_col - cols + 1;
         self.clamp_scroll();
 
     def insert_text(self, text):
@@ -934,8 +832,7 @@ class TextArea(Widget):
         char_w = max(1, self.font.size("M")[0]);
         row = self.scroll_row + max(0, min(self.visible_rows() - 1, (pos[1] - rect.y) // line_h));
         row = max(0, min(len(self.lines) - 1, int(row)));
-        visual_col = self.scroll_col + max(0, (pos[0] - rect.x) // char_w);
-        col = self.visual_col_to_raw_col(self.lines[row], visual_col);
+        col = self.scroll_col + max(0, (pos[0] - rect.x) // char_w);
         col = max(0, min(len(self.lines[row]), int(col)));
         return row, col;
 
@@ -1121,85 +1018,13 @@ class TextArea(Widget):
         if selected is None:
             return;
         left, right = selected;
-        line = self.lines[row];
-        visual_left_col = self.raw_col_to_visual_col(line, left);
-        visual_right_col = self.raw_col_to_visual_col(line, right);
-        visible_left = max(visual_left_col, self.scroll_col);
-        visible_right = min(visual_right_col, self.scroll_col + self.visible_cols());
+        visible_left = max(left, self.scroll_col);
+        visible_right = min(right, self.scroll_col + self.visible_cols());
         if visible_right <= visible_left:
             return;
         x = text_rect.x + (visible_left - self.scroll_col) * char_w;
         width = max(char_w, (visible_right - visible_left) * char_w);
         pygame.draw.rect(screen, self.theme.button_alt, pygame.Rect(x, y, width, line_h));
-
-    def syntax_colors(self):
-        return {
-            "normal": self.theme.text,
-            "keyword": getattr(self.theme, "accent", self.theme.cursor),
-            "string": getattr(self.theme, "warning", self.theme.button),
-            "comment": self.theme.muted,
-            "number": getattr(self.theme, "cursor", self.theme.text),
-        };
-
-    def is_code_syntax_enabled(self):
-        return self.syntax not in (None, "", "plain", False);
-
-    def split_code_segments(self, visible_text):
-        if not self.is_code_syntax_enabled():
-            return [(visible_text, self.theme.text)];
-        colors = self.syntax_colors();
-        result = [];
-        index = 0;
-        while index < len(visible_text):
-            char = visible_text[index];
-            if char == "#":
-                result.append((visible_text[index:], colors["comment"]));
-                break;
-            if char in ('"', "'"):
-                quote = char;
-                end = index + 1;
-                escaped = False;
-                while end < len(visible_text):
-                    if visible_text[end] == quote and not escaped:
-                        end += 1;
-                        break;
-                    escaped = (visible_text[end] == "\\" and not escaped);
-                    if visible_text[end] != "\\":
-                        escaped = False;
-                    end += 1;
-                result.append((visible_text[index:end], colors["string"]));
-                index = end;
-                continue;
-            if char.isdigit():
-                end = index + 1;
-                while end < len(visible_text) and (visible_text[end].isdigit() or visible_text[end] in ".xXabcdefABCDEF"):
-                    end += 1;
-                result.append((visible_text[index:end], colors["number"]));
-                index = end;
-                continue;
-            if char.isalpha() or char == "_":
-                end = index + 1;
-                while end < len(visible_text) and (visible_text[end].isalnum() or visible_text[end] == "_"):
-                    end += 1;
-                word = visible_text[index:end];
-                color = colors["keyword"] if keyword.iskeyword(word) else colors["normal"];
-                result.append((word, color));
-                index = end;
-                continue;
-            result.append((char, colors["normal"]));
-            index += 1;
-        return result;
-
-    def draw_code_line(self, screen, text_rect, y, visible_text, line_h):
-        x = text_rect.x;
-        for text, color in self.split_code_segments(visible_text):
-            if not text:
-                continue;
-            rendered = self.font.render(text, True, color);
-            if x >= text_rect.right:
-                return;
-            screen.blit(rendered, (x, y));
-            x += rendered.get_width();
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.theme.panel, self.rect, border_radius=8);
@@ -1215,14 +1040,13 @@ class TextArea(Widget):
                 if row >= len(self.lines):
                     break;
                 line = self.lines[row];
-                visible = self.visible_visual_text(line);
+                visible = line[self.scroll_col:self.scroll_col + cols];
                 y = text_rect.y + index * line_h;
                 self.draw_selection_for_row(screen, text_rect, row, y, char_w, line_h);
-                self.draw_code_line(screen, text_rect, y, visible, line_h);
+                draw_clipped_text(screen, self.font, visible, self.theme.text, pygame.Rect(text_rect.x, y, text_rect.width, line_h));
             if self.active and self.cursor_visible:
                 if self.scroll_row <= self.cursor_row < self.scroll_row + rows:
-                    visual_col = self.raw_col_to_visual_col(self.lines[self.cursor_row], self.cursor_col);
-                    cx = text_rect.x + max(0, visual_col - self.scroll_col) * char_w;
+                    cx = text_rect.x + max(0, self.cursor_col - self.scroll_col) * char_w;
                     cy = text_rect.y + (self.cursor_row - self.scroll_row) * line_h;
                     if text_rect.collidepoint(cx, cy):
                         pygame.draw.rect(screen, self.theme.cursor, pygame.Rect(cx, cy + 2, 3, line_h - 4));
@@ -1314,75 +1138,6 @@ class ColorPicker(Widget):
                 self.select_palette(min(len(self.colors) - 1, self.selected + 8));
                 return True;
         return False;
-
-    def syntax_colors(self):
-        return {
-            "normal": self.theme.text,
-            "keyword": getattr(self.theme, "accent", self.theme.cursor),
-            "string": getattr(self.theme, "warning", self.theme.button),
-            "comment": self.theme.muted,
-            "number": getattr(self.theme, "cursor", self.theme.text),
-        };
-
-    def is_code_syntax_enabled(self):
-        return self.syntax not in (None, "", "plain", False);
-
-    def split_code_segments(self, visible_text):
-        if not self.is_code_syntax_enabled():
-            return [(visible_text, self.theme.text)];
-        colors = self.syntax_colors();
-        result = [];
-        index = 0;
-        while index < len(visible_text):
-            char = visible_text[index];
-            if char == "#":
-                result.append((visible_text[index:], colors["comment"]));
-                break;
-            if char in ('"', "'"):
-                quote = char;
-                end = index + 1;
-                escaped = False;
-                while end < len(visible_text):
-                    if visible_text[end] == quote and not escaped:
-                        end += 1;
-                        break;
-                    escaped = (visible_text[end] == "\\" and not escaped);
-                    if visible_text[end] != "\\":
-                        escaped = False;
-                    end += 1;
-                result.append((visible_text[index:end], colors["string"]));
-                index = end;
-                continue;
-            if char.isdigit():
-                end = index + 1;
-                while end < len(visible_text) and (visible_text[end].isdigit() or visible_text[end] in ".xXabcdefABCDEF"):
-                    end += 1;
-                result.append((visible_text[index:end], colors["number"]));
-                index = end;
-                continue;
-            if char.isalpha() or char == "_":
-                end = index + 1;
-                while end < len(visible_text) and (visible_text[end].isalnum() or visible_text[end] == "_"):
-                    end += 1;
-                word = visible_text[index:end];
-                color = colors["keyword"] if keyword.iskeyword(word) else colors["normal"];
-                result.append((word, color));
-                index = end;
-                continue;
-            result.append((char, colors["normal"]));
-            index += 1;
-        return result;
-
-    def draw_code_line(self, screen, text_rect, y, visible_text, line_h):
-        x = text_rect.x;
-        for text, color in self.split_code_segments(visible_text):
-            if not text:
-                continue;
-            rendered = self.font.render(text, True, color);
-            if x >= text_rect.right:
-                return;
-            screen.blit(rendered, (x, y));
-            x += rendered.get_width();
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.theme.panel, self.rect, border_radius=8);
@@ -1482,75 +1237,6 @@ class Slider(Widget):
                 self.set_value(self.maximum);
                 return True;
         return False;
-
-    def syntax_colors(self):
-        return {
-            "normal": self.theme.text,
-            "keyword": getattr(self.theme, "accent", self.theme.cursor),
-            "string": getattr(self.theme, "warning", self.theme.button),
-            "comment": self.theme.muted,
-            "number": getattr(self.theme, "cursor", self.theme.text),
-        };
-
-    def is_code_syntax_enabled(self):
-        return self.syntax not in (None, "", "plain", False);
-
-    def split_code_segments(self, visible_text):
-        if not self.is_code_syntax_enabled():
-            return [(visible_text, self.theme.text)];
-        colors = self.syntax_colors();
-        result = [];
-        index = 0;
-        while index < len(visible_text):
-            char = visible_text[index];
-            if char == "#":
-                result.append((visible_text[index:], colors["comment"]));
-                break;
-            if char in ('"', "'"):
-                quote = char;
-                end = index + 1;
-                escaped = False;
-                while end < len(visible_text):
-                    if visible_text[end] == quote and not escaped:
-                        end += 1;
-                        break;
-                    escaped = (visible_text[end] == "\\" and not escaped);
-                    if visible_text[end] != "\\":
-                        escaped = False;
-                    end += 1;
-                result.append((visible_text[index:end], colors["string"]));
-                index = end;
-                continue;
-            if char.isdigit():
-                end = index + 1;
-                while end < len(visible_text) and (visible_text[end].isdigit() or visible_text[end] in ".xXabcdefABCDEF"):
-                    end += 1;
-                result.append((visible_text[index:end], colors["number"]));
-                index = end;
-                continue;
-            if char.isalpha() or char == "_":
-                end = index + 1;
-                while end < len(visible_text) and (visible_text[end].isalnum() or visible_text[end] == "_"):
-                    end += 1;
-                word = visible_text[index:end];
-                color = colors["keyword"] if keyword.iskeyword(word) else colors["normal"];
-                result.append((word, color));
-                index = end;
-                continue;
-            result.append((char, colors["normal"]));
-            index += 1;
-        return result;
-
-    def draw_code_line(self, screen, text_rect, y, visible_text, line_h):
-        x = text_rect.x;
-        for text, color in self.split_code_segments(visible_text):
-            if not text:
-                continue;
-            rendered = self.font.render(text, True, color);
-            if x >= text_rect.right:
-                return;
-            screen.blit(rendered, (x, y));
-            x += rendered.get_width();
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.theme.panel, self.rect, border_radius=8);
