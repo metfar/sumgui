@@ -70,11 +70,14 @@ start();
 ## Run demos
 
 ```bash
+python examples/demo_bgi-like_canvas.py
+python examples/demo_code_runner.py
+python examples/demo_code_textarea.py
+python examples/demo_colorpicker.py
+python examples/demo_first.py
 python examples/demo_full.py
-python examples/demo_bgi_canvas.py
 python examples/demo_quick_start.py
 python examples/demo_themes.py
-python examples/demo_colorpicker.py
 ```
 
 ## Included in this alpha
@@ -211,7 +214,7 @@ It can show stdout/stderr using terminal-style colours.
 python examples/demo_code_runner.py
 ```
 
-The demo includes a `TextArea` serving as a tiny code editor, a `RUN` button, and a `TerminalArea` displaying the captured program output.
+The demo includes a `TextArea` that serves as a tiny code editor, a `RUN` button, and a `TerminalArea` that displays the captured program output.
 
 This is intentionally simple and local. Running arbitrary code is dangerous; only execute code you trust.
 
