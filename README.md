@@ -64,8 +64,7 @@ button("HELLO", 20, 80, 180, 60, do=lambda: alert("Hello from SumGUI!"));
 
 start();
 ```
-![First program](docs/demo_first.png)
-
+colour
 
 ## Run demos
 
@@ -140,7 +139,7 @@ Planned future work:
 
 - Remappable KeyMap UI
 - TreeView, PropertyGrid, Tabs and Splitter
-- More file dialogs
+- More file dialogues
 - More examples and tutorials
 
 
@@ -200,7 +199,7 @@ It can show stdout/stderr using terminal-style colours.
 python examples/demo_code_runner.py
 ```
 
-The demo contains a `TextArea` used as a tiny code editor, a `RUN` button, and a `TerminalArea` showing the captured program output.
+The demo includes a `TextArea` serving as a tiny code editor, a `RUN` button, and a `TerminalArea` displaying the captured program output.
 
 This is intentionally simple and local. Running arbitrary code is dangerous; only execute code you trust.
 
@@ -213,6 +212,8 @@ This is intentionally simple and local. Running arbitrary code is dangerous; onl
 - Backspace/Delete repeat through SumGUI key repeat.
 - Added `input_box()` and `easy.ask()` modal input helpers.
 - Added `examples/demo_textinput_keyrepeat.py`.
+
+![Demo TextInput](docs/demo_textinput_keyrepeat.png)
 
 
 <p align=center><b>- oOo -</b></p>
