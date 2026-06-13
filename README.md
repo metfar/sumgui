@@ -64,7 +64,8 @@ button("HELLO", 20, 80, 180, 60, do=lambda: alert("Hello from SumGUI!"));
 
 start();
 ```
-colour
+![First program](docs/demo_first.png)
+
 
 ## Run demos
 
@@ -85,7 +86,7 @@ python examples/demo_themes.py
 - Application/easy API
 - Themes: ZX, DOS, C64, MSX, Dark, Light
 - Button, Label, TextArea, Slider, ToolBar, StatusBar
-- GridWidget with color, text or image per cell
+- GridWidget with colour, text or image per cell
 - PaletteWidget and ColorPicker
 - CanvasArea with simple 2D primitives
 - BarChart, LineChart, PieChart, ScatterChart
@@ -199,7 +200,7 @@ It can show stdout/stderr using terminal-style colours.
 python examples/demo_code_runner.py
 ```
 
-The demo includes a `TextArea` serving as a tiny code editor, a `RUN` button, and a `TerminalArea` displaying the captured program output.
+The demo includes a `TextArea` that serves as a tiny code editor, a `RUN` button, and a `TerminalArea` that displays the captured program output.
 
 This is intentionally simple and local. Running arbitrary code is dangerous; only execute code you trust.
 
