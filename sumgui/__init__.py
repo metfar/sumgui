@@ -21,12 +21,12 @@
 #  
 #
 
-__version__ = "0.0.1a19";
+__version__ = "0.0.1a20";
 
 from .theme import C64_COLORS, DEFAULT_THEME, DOS_COLORS, MSX_COLORS, SPECTRUM_COLORS, THEMES, Theme, make_theme;
 from .scale import Scale;
 from .keymap import KeyMap, default_voxel_keymap;
-from .widgets import Button, CanvasArea, ColorPicker, GridCell, GridWidget, Label, PaletteWidget, Panel, Slider, StatusBar, TextArea, ToolBar, Widget;
+from .widgets import Button, CanvasArea, ColorPicker, GridCell, GridWidget, Label, PaletteWidget, Panel, Slider, StatusBar, TextArea, TerminalArea, ToolBar, Widget;
 from .easy import EasyApp;
 from .charts import BarChart, LineChart, PieChart, ScatterChart;
 from .dialogs import message_box;

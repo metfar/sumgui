@@ -178,6 +178,7 @@ Tabs are stored as `\t`, but displayed with alignment. They are not drawn as str
 
 
 
+
 ### Running examples from source
 
 The example scripts insert the project root into `sys.path` before importing `sumgui`, so they use the local source tree even if another SumGUI version is installed in the user or system Python environment.
@@ -185,6 +186,19 @@ The example scripts insert the project root into `sys.path` before importing `su
 ```bash
 python examples/demo_code_textarea.py
 ```
+
+## Code runner and terminal demo
+
+SumGUI includes a small terminal-like widget for examples, teaching tools and simple local utilities.
+It can show stdout/stderr using terminal-style colours.
+
+```bash
+python examples/demo_code_runner.py
+```
+
+The demo contains a `TextArea` used as a tiny code editor, a `RUN` button, and a `TerminalArea` showing the captured program output.
+
+This is intentionally simple and local. Running arbitrary code is dangerous; only execute code you trust.
 
 
 <p align=center><b>- oOo -</b></p>

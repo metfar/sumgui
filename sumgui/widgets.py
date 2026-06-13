@@ -2531,3 +2531,133 @@ class CanvasArea(Widget):
                 self.on_draw(self, screen, area);
         with_clip(screen, area, draw_inside);
         self.needs_redraw = False;
+
+
+class TerminalArea(TextArea):
+    def __init__(self, rect, font, text="", theme=None, tab_index=0, show_v_scrollbar=True, show_h_scrollbar=True):
+        super().__init__(rect, font, text=text, multiline=True, show_scrollbar=True, editable=False, max_lines=-1, max_cols=-1, theme=theme, show_v_scrollbar=show_v_scrollbar, show_h_scrollbar=show_h_scrollbar, accepts_tab=False, tab_index=tab_index, tab_size=8, syntax=None);
+        self.line_colors = [];
+        self.terminal_colors = {
+            "normal": (220, 220, 220),
+            "stdout": (220, 220, 220),
+            "stderr": (255, 96, 96),
+            "error": (255, 96, 96),
+            "prompt": (96, 255, 96),
+            "info": (96, 192, 255),
+            "warning": (255, 220, 96),
+            "success": (96, 255, 96),
+        };
+        self.set_text(text);
+
+    def set_text(self, text, color="normal"):
+        self.lines = text.split("\n") if text else [""];
+        self.line_colors = [color for _ in self.lines];
+        self.cursor_row = len(self.lines) - 1;
+        self.cursor_col = len(self.lines[self.cursor_row]);
+        self.clear_selection();
+        self.scroll_to_bottom();
+
+    def clear(self):
+        self.lines = [""];
+        self.line_colors = ["normal"];
+        self.cursor_row = 0;
+        self.cursor_col = 0;
+        self.scroll_row = 0;
+        self.scroll_col = 0;
+        self.clear_selection();
+
+    def append(self, text="", color="normal"):
+        parts = str(text).split("\n");
+        if self.lines == [""] and self.line_colors == ["normal"]:
+            self.lines = [];
+            self.line_colors = [];
+        for part in parts:
+            self.lines.append(part);
+            self.line_colors.append(color);
+        if not self.lines:
+            self.lines = [""];
+            self.line_colors = ["normal"];
+        self.cursor_row = len(self.lines) - 1;
+        self.cursor_col = len(self.lines[self.cursor_row]);
+        self.scroll_to_bottom();
+
+    def write(self, text, color="stdout"):
+        if text is None:
+            return;
+        if str(text) == "":
+            return;
+        self.append(str(text).rstrip("\n"), color=color);
+
+    def scroll_to_bottom(self):
+        self.scroll_row = max(0, len(self.lines) - self.visible_rows());
+        self.scroll_col = 0;
+        self.clamp_scroll();
+
+    def color_for_line(self, row):
+        if 0 <= row < len(self.line_colors):
+            value = self.line_colors[row];
+            if isinstance(value, tuple):
+                return value;
+            return self.terminal_colors.get(value, self.theme.text);
+        return self.theme.text;
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
+            hit = self.scrollbar_hit(event.pos);
+            if hit is not None:
+                self.drag_scroll = hit;
+                self.apply_scroll_drag(event.pos);
+                return True;
+            return True;
+        if event.type == pygame.MOUSEMOTION:
+            if self.drag_scroll is not None:
+                self.apply_scroll_drag(event.pos);
+                return True;
+        if event.type == pygame.MOUSEBUTTONUP:
+            if self.drag_scroll is not None:
+                self.drag_scroll = None;
+                return True;
+        if event.type == pygame.MOUSEWHEEL and self.rect.collidepoint(pygame.mouse.get_pos()):
+            if self.show_v_scrollbar or event.y != 0:
+                self.scroll_row = max(0, min(self.max_scroll_row(), self.scroll_row - event.y));
+            if self.show_h_scrollbar or event.x != 0:
+                self.scroll_col = max(0, min(self.max_scroll_col(), self.scroll_col + event.x));
+            return True;
+        if event.type == pygame.KEYDOWN and self.has_focus:
+            if event.key == pygame.K_UP:
+                self.scroll_row = max(0, self.scroll_row - 1);
+                return True;
+            if event.key == pygame.K_DOWN:
+                self.scroll_row = min(self.max_scroll_row(), self.scroll_row + 1);
+                return True;
+            if event.key == pygame.K_PAGEUP:
+                self.scroll_row = max(0, self.scroll_row - self.visible_rows());
+                return True;
+            if event.key == pygame.K_PAGEDOWN:
+                self.scroll_row = min(self.max_scroll_row(), self.scroll_row + self.visible_rows());
+                return True;
+            if event.key == pygame.K_HOME:
+                self.scroll_row = 0;
+                return True;
+            if event.key == pygame.K_END:
+                self.scroll_to_bottom();
+                return True;
+        return False;
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, (0, 0, 0), self.rect, border_radius=8);
+        pygame.draw.rect(screen, self.theme.cursor if self.has_focus else self.theme.line, self.rect, 3 if self.has_focus else 2, border_radius=8);
+        line_h = self.font.get_height();
+        text_rect = self.content_rect();
+        def draw_inside():
+            rows = self.visible_rows();
+            cols = self.visible_cols();
+            for index in range(rows):
+                row = self.scroll_row + index;
+                if row >= len(self.lines):
+                    break;
+                visible = self.visible_text_slice(self.lines[row], cols);
+                y = text_rect.y + index * line_h;
+                draw_clipped_text(screen, self.font, visible, self.color_for_line(row), pygame.Rect(text_rect.x, y, text_rect.width, line_h));
+        with_clip(screen, text_rect, draw_inside);
+        self.draw_scrollbar(screen);

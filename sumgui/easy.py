@@ -28,7 +28,7 @@ from .keyrepeat import enable_key_repeat, get_events;
 from .scale import Scale;
 from .theme import DEFAULT_THEME, make_theme;
 from .commands import command_help, command_list;
-from .widgets import Button, CanvasArea, Label, Panel, TextArea;
+from .widgets import Button, CanvasArea, Label, Panel, TextArea, TerminalArea;
 
 _app = None;
 
@@ -135,6 +135,12 @@ def canvas(x, y, w, h, interactive=True, auto_redraw=True, on_event=None, on_dra
     current = app();
     return current.add(CanvasArea(pygame.Rect(x, y, w, h), theme=current.theme, on_event=on_event, on_draw=on_draw, interactive=interactive, auto_redraw=auto_redraw));
 
+
+
+def terminal(x, y, w, h, text="", font_size=None, show_v_scrollbar=True, show_h_scrollbar=True):
+    current = app();
+    use_font = current.make_font(font_size or current.font_size);
+    return current.add(TerminalArea(pygame.Rect(x, y, w, h), use_font, text=text, theme=current.theme, show_v_scrollbar=show_v_scrollbar, show_h_scrollbar=show_h_scrollbar));
 
 def alert(message, title="SumGUI"):
     current = app();
