@@ -1,4 +1,4 @@
-# SumGUI / ΣGUI alpha 0.0.1a16
+# SumGUI / ΣGUI alpha 0.0.1a20
 
 A tiny, portable and beginner-friendly GUI toolkit for Python and Pygame.
 
