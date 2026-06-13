@@ -11,7 +11,7 @@ Share.
 Improve.
 ```
 
-The goal is to make GUI programming accessible again. You should be able to create useful applications without learning a huge framework first.
+The goal is to make GUI programming accessible again. You should be able to create useful applications without having to learn a huge framework first.
 
 ```text
 Simple enough to learn in one afternoon.
@@ -80,7 +80,7 @@ python examples/demo_colorpicker.py
 - Application/easy API
 - Themes: ZX, DOS, C64, MSX, Dark, Light
 - Button, Label, TextArea, Slider, ToolBar, StatusBar
-- GridWidget with color, text or image per cell
+- GridWidget with colour, text or image per cell
 - PaletteWidget and ColorPicker
 - CanvasArea with simple 2D primitives
 - BarChart, LineChart, PieChart, ScatterChart
@@ -105,6 +105,21 @@ or with the easy layer:
 from sumgui.easy import *;
 print(keymap_help());
 ```
+
+
+```
+Tab: Move focus to the next widget.
+Shift+Tab : Move focus to the previous widget.
+Enter / Space: Activate focused buttons or selected actions.
+Ctrl+C / Ctrl+Insert: Copy text from the focused text widget.
+Ctrl+X / Shift+Delete: Cut text from the focused text widget.
+Ctrl+V / Shift+Insert: Paste text into the focused text widget.
+Arrows: Move cursor, list selection, grid cursor, sliders or chart points.
+Home / End: Jump to the first/last position where supported.
+PageUp / PageDown: Move by pages where supported.
+Escape: Close demos/dialogs or exit the app.
+```
+
 
 ## Canvas example
 
@@ -134,7 +149,7 @@ Planned future work:
 
 - Remappable KeyMap UI
 - TreeView, PropertyGrid, Tabs and Splitter
-- More file dialogs
+- More file dialogues
 - More examples and tutorials
 
 
@@ -177,8 +192,6 @@ textarea(20, 20, 500, 300, text=code, accepts_tab=True, tab_size=4, syntax="pyth
 Tabs are stored as `\t`, but displayed with alignment. They are not drawn as strange control characters.
 
 
-
-
 ### Running examples from source
 
 The example scripts insert the project root into `sys.path` before importing `sumgui`, so they use the local source tree even if another SumGUI version is installed in the user or system Python environment.
@@ -196,10 +209,13 @@ It can show stdout/stderr using terminal-style colours.
 python examples/demo_code_runner.py
 ```
 
-The demo contains a `TextArea` used as a tiny code editor, a `RUN` button, and a `TerminalArea` showing the captured program output.
+The demo includes a `TextArea` serving as a tiny code editor, a `RUN` button, and a `TerminalArea` displaying the captured program output.
 
 This is intentionally simple and local. Running arbitrary code is dangerous; only execute code you trust.
 
 
 <p align=center><b>- oOo -</b></p>
+
+
+
 
