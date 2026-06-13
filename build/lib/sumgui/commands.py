@@ -21,29 +21,23 @@
 #  
 #
 
-
-import math;
-import os;
-import sys;
-
-import pygame;
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")));
-
-
-import os;
-import sys;
-
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."));
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT);
-
-from sumgui.easy import *;
+COMMANDS = [
+    ("Tab", "Move focus to the next widget."),
+    ("Shift+Tab", "Move focus to the previous widget."),
+    ("Enter / Space", "Activate focused buttons or selected actions."),
+    ("Ctrl+C / Ctrl+Insert", "Copy text from focused text widget."),
+    ("Ctrl+X / Shift+Delete", "Cut text from focused text widget."),
+    ("Ctrl+V / Shift+Insert", "Paste text into focused text widget."),
+    ("Arrows", "Move cursor, list selection, grid cursor, sliders or chart points."),
+    ("Home / End", "Jump to first/last position where supported."),
+    ("PageUp / PageDown", "Move by pages where supported."),
+    ("Escape", "Close demos/dialogs or exit app."),
+];
 
 
-window("SumGUI quick start", width=720, height=720, font_size=22, theme="ZX");
-say("READY.", 20, 20, 300, 40, font_size=28, bold=True);
-say("This is the beginner-friendly API.", 20, 70, 520, 34);
-button("ALERT", 20, 130, 180, 70, do=lambda: alert("Hello from SumGUI!"));
-textarea(20, 230, 660, 280, "Try accents: áéíóú àèìòù äëïöü ñ ç\nClipboard: Ctrl+C/X/V", font_size=20, accepts_tab=True);
-start();
+def command_help():
+    return "\n".join(key + " : " + desc for key, desc in COMMANDS);
+
+
+def command_list():
+    return COMMANDS[:];

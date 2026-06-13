@@ -1,3 +1,24 @@
+Metadata-Version: 2.4
+Name: sumgui
+Version: 0.0.1a19
+Summary: A tiny retro-flavored GUI toolkit for Pygame.
+Author: William Martinez Bas
+Author-email: William Martinez Bas <metfar@gmail.com>
+License: GPL-2.0-or-later
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Software Development :: User Interfaces
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: pygame>=2.0
+Requires-Dist: clipboard>=0.0.4
+Dynamic: author
+Dynamic: license-file
+Dynamic: requires-python
+
 # SumGUI / ΣGUI alpha 0.0.1a16
 
 A tiny, portable and beginner-friendly GUI toolkit for Python and Pygame.
@@ -177,6 +198,8 @@ textarea(20, 20, 500, 300, text=code, accepts_tab=True, tab_size=4, syntax="pyth
 Tabs are stored as `\t`, but displayed with alignment. They are not drawn as strange control characters.
 
 
+<p align=center><b>- oOo -</b></p>
+
 
 ### Running examples from source
 
@@ -185,7 +208,3 @@ The example scripts insert the project root into `sys.path` before importing `su
 ```bash
 python examples/demo_code_textarea.py
 ```
-
-
-<p align=center><b>- oOo -</b></p>
-

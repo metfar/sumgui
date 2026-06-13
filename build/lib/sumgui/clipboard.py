@@ -21,29 +21,27 @@
 #  
 #
 
-
-import math;
-import os;
-import sys;
-
 import pygame;
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")));
+_INTERNAL_CLIPBOARD = "";
 
 
-import os;
-import sys;
+def set_clipboard_text(text):
+    global _INTERNAL_CLIPBOARD;
+    _INTERNAL_CLIPBOARD = str(text);
+    try:
+        pygame.scrap.init();
+        pygame.scrap.put(pygame.SCRAP_TEXT, _INTERNAL_CLIPBOARD.encode("utf-8"));
+    except Exception:
+        pass;
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."));
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT);
 
-from sumgui.easy import *;
-
-
-window("SumGUI quick start", width=720, height=720, font_size=22, theme="ZX");
-say("READY.", 20, 20, 300, 40, font_size=28, bold=True);
-say("This is the beginner-friendly API.", 20, 70, 520, 34);
-button("ALERT", 20, 130, 180, 70, do=lambda: alert("Hello from SumGUI!"));
-textarea(20, 230, 660, 280, "Try accents: áéíóú àèìòù äëïöü ñ ç\nClipboard: Ctrl+C/X/V", font_size=20, accepts_tab=True);
-start();
+def get_clipboard_text():
+    try:
+        pygame.scrap.init();
+        data = pygame.scrap.get(pygame.SCRAP_TEXT);
+        if data:
+            return data.decode("utf-8", errors="ignore").rstrip("\x00");
+    except Exception:
+        pass;
+    return _INTERNAL_CLIPBOARD;

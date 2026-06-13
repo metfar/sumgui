@@ -9,32 +9,33 @@
 #  the Free Software Foundation; either version 2 of the License, or
 #  (at your option) any later version.
 #  
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#  
 #
+
+
+import os;
+import sys;
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."));
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT);
 
 from sumgui.easy import *;
 
 
-CODE = '''#!/usr/bin/env python3
-# Tabs are real tab characters and render as indentation.
-def greet(name):
-	if name:
-		print("Hello", name)
-	else:
-		print("Hello, SumGUI")
+CODE = """#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-for item in [1, 2, 3]:
-	greet("coder " + str(item))
-''';
+def saludar(nombre):
+	print("Hola, " + nombre);
+
+for nombre in ["José", "François", "Jürgen", "Miyuki"]:
+	saludar(nombre);
+""";
 
 
 def main():
-    window("SumGUI TextArea Code Demo", width=720, height=720, font_size=18, theme="dark");
-    say("TextArea: real tabs + vi-like syntax colours", 20, 20, 640, 32, bold=True);
+    window("SumGUI Code TextArea", width=720, height=720, font_size=18);
+    label("Python TextArea: real tabs + simple vi-like colours", 20, 20, 660, 36);
     textarea(20, 70, 660, 560, text=CODE, accepts_tab=True, tab_size=4, syntax="python");
     start();
 

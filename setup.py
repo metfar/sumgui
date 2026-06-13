@@ -20,7 +20,7 @@ from setuptools import find_packages, setup;
 
 setup(
     name="sumgui",
-    version="0.0.1a16",
+    version="0.0.1a19",
     description="A tiny retro-flavored GUI toolkit for Pygame.",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
@@ -29,7 +29,7 @@ setup(
     license="GPL-2.0-or-later",
     packages=find_packages(),
     python_requires=">=3.8",
-    install_requires=["pygame>=2.0", "clipboard>=0.0.4"],
+    install_requires=["pygame>=2.0"],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",

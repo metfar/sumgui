@@ -30,6 +30,14 @@ import pygame;
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")));
 
+
+import os;
+import sys;
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."));
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT);
+
 from sumgui.easy import alert, button, canvas, label, start, window;
 
 STATE = {"shape": "RECT", "color": (255, 255, 0), "last": None, "status": "Choose a shape and click the canvas."};

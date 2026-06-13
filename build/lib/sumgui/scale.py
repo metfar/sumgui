@@ -21,29 +21,23 @@
 #  
 #
 
-
-import math;
-import os;
-import sys;
-
 import pygame;
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")));
+BASE_WIDTH = 720;
+BASE_HEIGHT = 1280;
 
+class Scale:
+    def __init__(self, width, height, base_height=BASE_HEIGHT):
+        self.width = width;
+        self.height = height;
+        self.base_height = base_height;
+        self.factor = height / base_height;
 
-import os;
-import sys;
+    def v(self, value):
+        return max(1, int(round(value * self.factor)));
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."));
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT);
+    def rect(self, x, y, w, h):
+        return pygame.Rect(self.v(x), self.v(y), self.v(w), self.v(h));
 
-from sumgui.easy import *;
-
-
-window("SumGUI quick start", width=720, height=720, font_size=22, theme="ZX");
-say("READY.", 20, 20, 300, 40, font_size=28, bold=True);
-say("This is the beginner-friendly API.", 20, 70, 520, 34);
-button("ALERT", 20, 130, 180, 70, do=lambda: alert("Hello from SumGUI!"));
-textarea(20, 230, 660, 280, "Try accents: áéíóú àèìòù äëïöü ñ ç\nClipboard: Ctrl+C/X/V", font_size=20, accepts_tab=True);
-start();
+    def font(self, points, bold=False):
+        return pygame.font.SysFont("monospace", max(8, self.v(points)), bold=bold);
