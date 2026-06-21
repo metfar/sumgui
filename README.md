@@ -212,9 +212,6 @@ This is intentionally simple and local. Running arbitrary code is dangerous; onl
 ![Demo UDG_Reborn](docs/udg.png)
 
 
-<p align=center><b>- oOo -</b></p>
-
-
 
 ## 0.0.1a27 Logical scaling
 
@@ -262,3 +259,12 @@ This lets applications like UDG Painter stop doing their own screen-size arithme
 
 - SumGUI now imports `pygame` from the package bootstrap before loading internal modules.
 - `import sumgui.easy as sg` should work directly in PyDroid3 without requiring `import pygame` first in user programs.
+
+
+
+<p align=center><b>- oOo -</b></p>
+
+
+
+
+
