@@ -21,7 +21,12 @@
 #  
 #
 
-__version__ = "0.0.1a22";
+# PyDroid3 bootstrap: load pygame before SumGUI submodules.
+# Some Android/PyDroid3 builds fail if internal widgets import pygame
+# before the top-level package has forced pygame to load.
+import pygame;
+
+__version__ = "0.0.1a26";
 
 from .theme import C64_COLORS, DEFAULT_THEME, DOS_COLORS, MSX_COLORS, SPECTRUM_COLORS, THEMES, Theme, make_theme;
 from .scale import Scale;

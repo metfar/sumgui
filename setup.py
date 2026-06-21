@@ -14,13 +14,19 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #  
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
+#  
+#
 #
 
 from setuptools import find_packages, setup;
 
 setup(
     name="sumgui",
-    version="0.0.1a22",
+    version="0.0.1a27",
     description="A tiny retro-flavored GUI toolkit for Pygame.",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",

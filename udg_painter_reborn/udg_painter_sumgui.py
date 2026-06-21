@@ -42,13 +42,15 @@ from sumgui.widgets import draw_clipped_text;
 
 BASE_WIDTH = 720;
 BASE_HEIGHT = 1280;
-HEIGHT = 960;#1360
+HEIGHT = 960;#1960; 
 WIDTH = int(BASE_WIDTH * (HEIGHT / BASE_HEIGHT));
 MIN_GRID_SIZE = 1;
 MAX_GRID_SIZE = 64;
 START_GRID_SIZE = 8;
-SAVE_MODES = ["COLOR", "BINARY", "XPM", "ICO"];
-SAVE_EXTENSIONS = {"COLOR": ".udg", "BINARY": ".bin", "XPM": ".xpm", "ICO": ".ico"};
+SAVE_MODES = ["COLOR", "BINARY", "XPM", "ICO", "PNG", "GIF", "JPG"];
+SAVE_EXTENSIONS = {"COLOR": ".udg", "BINARY": ".bin", "XPM": ".xpm", "ICO": ".ico", "PNG": ".png", "GIF": ".gif", "JPG": ".jpg"};
+LOAD_EXTENSIONS = [".udg", ".bin", ".xpm", ".ico", ".png", ".gif", ".jpg", ".jpeg"];
+IMAGE_EXTENSIONS = [".png", ".gif", ".jpg", ".jpeg"];
 
 SPECTRUM_COLORS = [
     (0, 0, 0),
@@ -156,11 +158,13 @@ def normalize_grid(grid, size=None):
 
 
 def nearest_spectrum_color(rgb):
+    source = color_to_rgba(rgb);
     best_index = 0;
     best_distance = None;
 
     for index, color in enumerate(APP_COLORS):
-        distance = ((int(rgb[0]) - color[0]) ** 2 + (int(rgb[1]) - color[1]) ** 2 + (int(rgb[2]) - color[2]) ** 2);
+        rgba = color_to_rgba(color);
+        distance = ((source[0] - rgba[0]) ** 2 + (source[1] - rgba[1]) ** 2 + (source[2] - rgba[2]) ** 2 + ((source[3] - rgba[3]) ** 2) // 4);
         if best_distance is None or distance < best_distance:
             best_distance = distance;
             best_index = index;
@@ -226,7 +230,38 @@ def binary_rows_to_grid(rows, rows_count=None, cols_count=None):
 
 
 def color_to_hex(color):
-    return "#{:02X}{:02X}{:02X}".format(color[0], color[1], color[2]);
+    rgba = color_to_rgba(color);
+    if rgba[3] >= 255:
+        return "#{:02X}{:02X}{:02X}".format(rgba[0], rgba[1], rgba[2]);
+    return "#{:02X}{:02X}{:02X}{:02X}".format(rgba[0], rgba[1], rgba[2], rgba[3]);
+
+
+def color_to_rgba(color):
+    if color is None:
+        return (0, 0, 0, 0);
+    if len(color) >= 4:
+        return (clamp(color[0], 0, 255), clamp(color[1], 0, 255), clamp(color[2], 0, 255), clamp(color[3], 0, 255));
+    return (clamp(color[0], 0, 255), clamp(color[1], 0, 255), clamp(color[2], 0, 255), 255);
+
+
+def color_to_rgb(color):
+    rgba = color_to_rgba(color);
+    return (rgba[0], rgba[1], rgba[2]);
+
+
+def alpha_blend(color, background):
+    rgba = color_to_rgba(color);
+    bg = color_to_rgba(background);
+    alpha = rgba[3] / 255.0;
+    return (
+        clamp(round(rgba[0] * alpha + bg[0] * (1.0 - alpha)), 0, 255),
+        clamp(round(rgba[1] * alpha + bg[1] * (1.0 - alpha)), 0, 255),
+        clamp(round(rgba[2] * alpha + bg[2] * (1.0 - alpha)), 0, 255),
+    );
+
+
+def draw_alpha_rect(screen, color, rect, background=GRID_BG, border_radius=0):
+    pygame.draw.rect(screen, alpha_blend(color, background), rect, border_radius=border_radius);
 
 
 def xpm_symbols(count):
@@ -266,7 +301,9 @@ def parse_xpm_color(value):
         return None;
     if value.startswith("#") and len(value) >= 7:
         try:
-            return (int(value[1:3], 16), int(value[3:5], 16), int(value[5:7], 16));
+            if len(value) >= 9:
+                return (int(value[1:3], 16), int(value[3:5], 16), int(value[5:7], 16), int(value[7:9], 16));
+            return (int(value[1:3], 16), int(value[3:5], 16), int(value[5:7], 16), 255);
         except ValueError:
             return None;
     names = {"black": (0, 0, 0), "blue": (0, 0, 255), "red": (255, 0, 0), "magenta": (255, 0, 255), "green": (0, 255, 0), "cyan": (0, 255, 255), "yellow": (255, 255, 0), "white": (255, 255, 255), "gray": (205, 205, 205), "grey": (205, 205, 205)};
@@ -333,8 +370,8 @@ def grid_to_rgba_image(grid):
         for col in range(size):
             color_index = grid[row][col];
             if isinstance(color_index, int) and 0 <= color_index < len(APP_COLORS):
-                rgb = APP_COLORS[color_index];
-                pixels[col, row] = (rgb[0], rgb[1], rgb[2], 255);
+                rgba = color_to_rgba(APP_COLORS[color_index]);
+                pixels[col, row] = rgba;
     return image;
 
 
@@ -342,16 +379,31 @@ def image_to_grid(image):
     rgba = image.convert("RGBA");
     source_w, source_h = rgba.size;
     size = clamp(max(source_w, source_h, 1), MIN_GRID_SIZE, MAX_GRID_SIZE);
+
+    if source_w != size or source_h != size:
+        try:
+            resample_filter = Image.Resampling.LANCZOS;
+        except AttributeError:
+            resample_filter = Image.LANCZOS;
+        rgba = rgba.resize((size, size), resample_filter);
+
     grid = empty_grid(size);
     pixels = rgba.load();
 
-    for row in range(source_h):
-        for col in range(source_w):
+    for row in range(size):
+        for col in range(size):
             r, g, b, a = pixels[col, row];
-            if a >= 64:
-                grid[row][col] = nearest_spectrum_color((r, g, b));
+            if a >= 1:
+                grid[row][col] = nearest_spectrum_color((r, g, b, a));
 
     return grid;
+
+
+def load_image_file(filename):
+    if Image is None:
+        raise RuntimeError("Pillow is required for PNG/GIF/JPG load.");
+    with Image.open(filename) as image:
+        return image_to_grid(image);
 
 
 def load_ico_file(filename):
@@ -388,6 +440,16 @@ def save_graphic(filename, grid, save_mode):
         image = grid_to_rgba_image(grid);
         size = grid_size(grid);
         image.save(filename, format="ICO", sizes=[(size, size)]);
+    elif save_mode in ("PNG", "GIF", "JPG"):
+        image = grid_to_rgba_image(grid);
+        if save_mode == "JPG":
+            background = Image.new("RGB", image.size, (255, 255, 255));
+            background.paste(image, mask=image.split()[3]);
+            background.save(filename, format="JPEG", quality=95);
+        elif save_mode == "GIF":
+            image.save(filename, format="GIF");
+        else:
+            image.save(filename, format="PNG");
     else:
         return "UNKNOWN SAVE MODE";
 
@@ -399,11 +461,13 @@ def load_graphic(filename):
     if lower_name.endswith(".bin"):
         with open(filename, "rb") as file:
             return binary_bytes_to_grid(file.read());
-    if lower_name.endswith(".xpm"):
+    if lower_name.endswith(".xpm") :
         with open(filename, "r", encoding="utf-8") as file:
             return xpm_text_to_grid(file.read());
     if lower_name.endswith(".ico"):
         return load_ico_file(filename);
+    if any(lower_name.endswith(ext) for ext in IMAGE_EXTENSIONS):
+        return load_image_file(filename);
 
     with open(filename, "r", encoding="utf-8") as file:
         text = file.read();
@@ -577,6 +641,40 @@ def filename_dialog(screen, clock, theme, title, default_name):
         pygame.display.flip();
 
 
+def confirm_dialog(screen, clock, theme, title, message, ok_text="OK", cancel_text="CANCEL"):
+    font_big = pygame.font.SysFont("monospace", max(16, screen.get_height() // 34), bold=True);
+    font_small = pygame.font.SysFont("monospace", max(12, screen.get_height() // 50), bold=True);
+    width, height = screen.get_size();
+    rect = pygame.Rect(width // 12, height // 3, width * 10 // 12, height // 3);
+    ok_rect = pygame.Rect(rect.x + 20, rect.bottom - height // 12, rect.width // 2 - 30, height // 17);
+    cancel_rect = pygame.Rect(rect.centerx + 10, rect.bottom - height // 12, rect.width // 2 - 30, height // 17);
+    while True:
+        for event in get_events():
+            if event.type == pygame.QUIT:
+                return False;
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return False;
+                if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                    return True;
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if ok_rect.collidepoint(event.pos):
+                    return True;
+                if cancel_rect.collidepoint(event.pos):
+                    return False;
+        pygame.draw.rect(screen, theme.panel, rect, border_radius=8);
+        pygame.draw.rect(screen, theme.line, rect, 3, border_radius=8);
+        draw_clipped_text(screen, font_big, title, theme.text, pygame.Rect(rect.x + 20, rect.y + 16, rect.width - 40, font_big.get_height() + 8));
+        message_rect = pygame.Rect(rect.x + 20, rect.y + height // 9, rect.width - 40, rect.height // 3);
+        draw_clipped_text(screen, font_small, message, theme.text, message_rect);
+        for button_rect, label in ((ok_rect, ok_text), (cancel_rect, cancel_text)):
+            pygame.draw.rect(screen, theme.button, button_rect, border_radius=6);
+            pygame.draw.rect(screen, theme.line, button_rect, 2, border_radius=6);
+            draw_clipped_text(screen, font_big, label, theme.button_text, button_rect, align="center", valign="middle");
+        pygame.display.flip();
+        clock.tick(60);
+
+
 def file_dialog(screen, clock, theme, title, extensions):
     font_big = pygame.font.SysFont("monospace", max(16, screen.get_height() // 34), bold=True);
     font_small = pygame.font.SysFont("monospace", max(12, screen.get_height() // 52), bold=True);
@@ -584,19 +682,26 @@ def file_dialog(screen, clock, theme, title, extensions):
     directory = os.getcwd();
     selected = 0;
     scroll = 0;
-    visible_rows = 10;
     row_h = max(24, height // 18);
     rect = pygame.Rect(width // 14, height // 8, width * 12 // 14, height * 3 // 4);
     cancel_rect = pygame.Rect(rect.centerx - width // 8, rect.bottom - height // 14, width // 4, height // 18);
+    list_top = rect.y + height // 8;
+    list_bottom = cancel_rect.y - height // 40;
+    visible_rows = max(1, (list_bottom - list_top) // row_h);
+    scrollbar_w = max(12, width // 80);
+    list_rect = pygame.Rect(rect.x + 18, list_top, rect.width - 52 - scrollbar_w, visible_rows * row_h);
+    scrollbar_rect = pygame.Rect(list_rect.right + 10, list_rect.y, scrollbar_w, list_rect.height);
 
     while True:
         items = list_files(directory, extensions);
         selected = clamp(selected, 0, max(0, len(items) - 1));
-        scroll = clamp(scroll, 0, max(0, len(items) - visible_rows));
+        max_scroll = max(0, len(items) - visible_rows);
+        scroll = clamp(scroll, 0, max_scroll);
         if selected < scroll:
             scroll = selected;
         if selected >= scroll + visible_rows:
             scroll = selected - visible_rows + 1;
+        scroll = clamp(scroll, 0, max_scroll);
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -608,6 +713,10 @@ def file_dialog(screen, clock, theme, title, extensions):
                     selected = max(0, selected - 1);
                 if event.key == pygame.K_DOWN:
                     selected = min(len(items) - 1, selected + 1);
+                if event.key == pygame.K_PAGEUP:
+                    selected = max(0, selected - visible_rows);
+                if event.key == pygame.K_PAGEDOWN:
+                    selected = min(len(items) - 1, selected + visible_rows);
                 if event.key == pygame.K_HOME:
                     selected = 0;
                 if event.key == pygame.K_END:
@@ -626,13 +735,28 @@ def file_dialog(screen, clock, theme, title, extensions):
                     directory = os.path.dirname(os.path.abspath(directory));
                     selected = 0;
                     scroll = 0;
+            if event.type == pygame.MOUSEWHEEL:
+                mouse_pos = pygame.mouse.get_pos();
+                if list_rect.collidepoint(mouse_pos) or scrollbar_rect.collidepoint(mouse_pos):
+                    scroll = clamp(scroll - event.y, 0, max_scroll);
+                    selected = clamp(selected, scroll, min(len(items) - 1, scroll + visible_rows - 1));
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if cancel_rect.collidepoint(event.pos):
                     return None;
-                list_top = rect.y + height // 8;
-                for idx in range(scroll, min(len(items), scroll + visible_rows)):
-                    item_rect = pygame.Rect(rect.x + 18, list_top + (idx - scroll) * row_h, rect.width - 36, row_h - 4);
-                    if item_rect.collidepoint(event.pos):
+                if event.button == 4 and (list_rect.collidepoint(event.pos) or scrollbar_rect.collidepoint(event.pos)):
+                    scroll = clamp(scroll - 1, 0, max_scroll);
+                    selected = clamp(selected, scroll, min(len(items) - 1, scroll + visible_rows - 1));
+                elif event.button == 5 and (list_rect.collidepoint(event.pos) or scrollbar_rect.collidepoint(event.pos)):
+                    scroll = clamp(scroll + 1, 0, max_scroll);
+                    selected = clamp(selected, scroll, min(len(items) - 1, scroll + visible_rows - 1));
+                elif scrollbar_rect.collidepoint(event.pos) and len(items) > visible_rows:
+                    relative = clamp(event.pos[1] - scrollbar_rect.y, 0, scrollbar_rect.height);
+                    scroll = clamp(round(relative * max_scroll / max(1, scrollbar_rect.height)), 0, max_scroll);
+                    selected = clamp(scroll, 0, max(0, len(items) - 1));
+                elif list_rect.collidepoint(event.pos):
+                    clicked_row = (event.pos[1] - list_rect.y) // row_h;
+                    idx = int(scroll + clicked_row);
+                    if 0 <= idx < len(items):
                         selected = idx;
                         label, path, is_dir = items[idx];
                         if is_dir:
@@ -646,14 +770,26 @@ def file_dialog(screen, clock, theme, title, extensions):
         pygame.draw.rect(screen, theme.line, rect, 3, border_radius=8);
         draw_clipped_text(screen, font_big, title, theme.text, pygame.Rect(rect.x + 18, rect.y + 14, rect.width - 36, font_big.get_height() + 8));
         draw_clipped_text(screen, font_small, directory, theme.muted, pygame.Rect(rect.x + 18, rect.y + 58, rect.width - 36, font_small.get_height() + 6));
-        list_top = rect.y + height // 8;
+        previous_clip = screen.get_clip();
+        screen.set_clip(list_rect);
         for idx in range(scroll, min(len(items), scroll + visible_rows)):
             label, path, is_dir = items[idx];
-            item_rect = pygame.Rect(rect.x + 18, list_top + (idx - scroll) * row_h, rect.width - 36, row_h - 4);
+            item_rect = pygame.Rect(list_rect.x, list_rect.y + (idx - scroll) * row_h, list_rect.width, row_h - 4);
             color = theme.button if idx == selected else theme.bg;
             pygame.draw.rect(screen, color, item_rect, border_radius=4);
             pygame.draw.rect(screen, theme.line, item_rect, 1, border_radius=4);
             draw_clipped_text(screen, font_small, label, theme.button_text if idx == selected else theme.text, pygame.Rect(item_rect.x + 10, item_rect.y + 4, item_rect.width - 20, item_rect.height - 8));
+        screen.set_clip(previous_clip);
+        pygame.draw.rect(screen, theme.bg, scrollbar_rect, border_radius=6);
+        pygame.draw.rect(screen, theme.line, scrollbar_rect, 1, border_radius=6);
+        if len(items) > visible_rows:
+            thumb_h = max(row_h // 2, int(scrollbar_rect.height * visible_rows / max(1, len(items))));
+            thumb_y = scrollbar_rect.y + int((scrollbar_rect.height - thumb_h) * scroll / max(1, max_scroll));
+            thumb_rect = pygame.Rect(scrollbar_rect.x + 2, thumb_y, scrollbar_rect.width - 4, thumb_h);
+            pygame.draw.rect(screen, theme.button, thumb_rect, border_radius=6);
+        else:
+            thumb_rect = pygame.Rect(scrollbar_rect.x + 2, scrollbar_rect.y + 2, scrollbar_rect.width - 4, scrollbar_rect.height - 4);
+            pygame.draw.rect(screen, theme.line, thumb_rect, border_radius=6);
         pygame.draw.rect(screen, theme.button, cancel_rect, border_radius=6);
         pygame.draw.rect(screen, theme.line, cancel_rect, 2, border_radius=6);
         draw_clipped_text(screen, font_big, "CANCEL", theme.button_text, cancel_rect, align="center", valign="middle");
@@ -732,7 +868,7 @@ class ExtendedPaletteWidget(Widget):
         pygame.draw.rect(screen, self.theme.line, self.rect, max(1, self.cell_size // 18), border_radius=max(4, self.cell_size // 8));
         for index, color in enumerate(self.colors):
             rect = self.color_rect(index);
-            pygame.draw.rect(screen, color, rect, border_radius=max(2, self.cell_size // 10));
+            draw_alpha_rect(screen, color, rect, self.theme.panel, border_radius=max(2, self.cell_size // 10));
             pygame.draw.rect(screen, self.theme.line, rect, max(1, self.cell_size // 20), border_radius=max(2, self.cell_size // 10));
             if index == self.selected:
                 pygame.draw.rect(screen, (255, 255, 255), rect.inflate(max(4, self.cell_size // 7), max(4, self.cell_size // 7)), max(2, self.cell_size // 12), border_radius=max(4, self.cell_size // 8));
@@ -743,31 +879,40 @@ class ExtendedPaletteWidget(Widget):
 
 
 def rgb_to_hex(color):
-    return "#{:02X}{:02X}{:02X}".format(clamp(color[0], 0, 255), clamp(color[1], 0, 255), clamp(color[2], 0, 255));
+    rgba = color_to_rgba(color);
+    return "#{:02X}{:02X}{:02X}{:02X}".format(rgba[0], rgba[1], rgba[2], rgba[3]);
 
 
 def hex_to_rgb(text):
     value = text.strip();
     if value.startswith("#"):
         value = value[1:];
-    if len(value) != 6:
+    if len(value) not in (6, 8):
         return None;
     try:
-        return (int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16));
+        red = int(value[0:2], 16);
+        green = int(value[2:4], 16);
+        blue = int(value[4:6], 16);
+        alpha = int(value[6:8], 16) if len(value) == 8 else 255;
+        return (red, green, blue, alpha);
     except ValueError:
         return None;
 
 
 def parse_color_value(text):
     value = text.strip();
-    if value.startswith("#") or (len(value) == 6 and all(char in "0123456789abcdefABCDEF" for char in value)):
+    hex_chars = "0123456789abcdefABCDEF";
+    if value.startswith("#") or (len(value) in (6, 8) and all(char in hex_chars for char in value)):
         return hex_to_rgb(value);
     if "," in value:
         parts = [part.strip() for part in value.split(",")];
     else:
         parts = [part.strip() for part in value.split()];
-    if len(parts) == 3 and all(part.isdigit() for part in parts):
-        return tuple(clamp(int(part), 0, 255) for part in parts);
+    if len(parts) in (3, 4) and all(part.isdigit() for part in parts):
+        values = [clamp(int(part), 0, 255) for part in parts];
+        if len(values) == 3:
+            values.append(255);
+        return tuple(values);
     return None;
 
 
@@ -792,17 +937,18 @@ def rgb_dialog(screen, clock, theme, title, color):
     font_big = pygame.font.SysFont("monospace", max(16, screen.get_height() // 34), bold=True);
     font_small = pygame.font.SysFont("monospace", max(12, screen.get_height() // 50), bold=True);
     width, height = screen.get_size();
-    rect = pygame.Rect(width // 14, height // 5, width * 12 // 14, height * 3 // 5);
+    rect = pygame.Rect(width // 14, height // 7, width * 12 // 14, height * 5 // 7);
     input_rect = pygame.Rect(rect.x + 20, rect.y + height // 10, rect.width - 40, height // 16);
     preview_old_rect = pygame.Rect(rect.x + 20, input_rect.bottom + 18, rect.width // 2 - 32, height // 14);
     preview_new_rect = pygame.Rect(rect.centerx + 12, input_rect.bottom + 18, rect.width // 2 - 32, height // 14);
     slider_h = max(54, height // 17);
     slider_gap = max(10, height // 90);
     slider_top = preview_old_rect.bottom + height // 24;
-    slider_rects = [pygame.Rect(rect.x + 20, slider_top + idx * (slider_h + slider_gap), rect.width - 40, slider_h) for idx in range(3)];
+    slider_rects = [pygame.Rect(rect.x + 20, slider_top + idx * (slider_h + slider_gap), rect.width - 40, slider_h) for idx in range(4)];
     ok_rect = pygame.Rect(rect.x + 20, rect.bottom - height // 13, rect.width // 2 - 30, height // 18);
     cancel_rect = pygame.Rect(rect.centerx + 10, rect.bottom - height // 13, rect.width // 2 - 30, height // 18);
-    current = [clamp(color[0], 0, 255), clamp(color[1], 0, 255), clamp(color[2], 0, 255)];
+    rgba = color_to_rgba(color);
+    current = [rgba[0], rgba[1], rgba[2], rgba[3]];
     text = rgb_to_hex(current);
     cursor = len(text);
     cursor_visible = True;
@@ -894,7 +1040,7 @@ def rgb_dialog(screen, clock, theme, title, color):
         pygame.draw.rect(screen, theme.panel, rect, border_radius=8);
         pygame.draw.rect(screen, theme.line, rect, 3, border_radius=8);
         draw_clipped_text(screen, font_big, title, theme.text, pygame.Rect(rect.x + 20, rect.y + 16, rect.width - 40, font_big.get_height() + 8));
-        draw_clipped_text(screen, font_small, "HEX editable (#RRGGBB) o RGB editable (R,G,B)", theme.muted, pygame.Rect(rect.x + 20, rect.y + 58, rect.width - 40, font_small.get_height() + 8));
+        draw_clipped_text(screen, font_small, "HEX editable (#RRGGBBAA) o RGBA editable (R,G,B,A)", theme.muted, pygame.Rect(rect.x + 20, rect.y + 58, rect.width - 40, font_small.get_height() + 8));
         pygame.draw.rect(screen, theme.bg, input_rect, border_radius=4);
         pygame.draw.rect(screen, theme.line, input_rect, 2, border_radius=4);
         input_inner = pygame.Rect(input_rect.x + 10, input_rect.y + 8, input_rect.width - 20, input_rect.height - 16);
@@ -907,15 +1053,15 @@ def rgb_dialog(screen, clock, theme, title, color):
         if cursor_visible:
             pygame.draw.rect(screen, theme.cursor, pygame.Rect(cursor_x, input_inner.y, 4, input_inner.height));
         screen.set_clip(previous_clip);
-        pygame.draw.rect(screen, color, preview_old_rect, border_radius=6);
-        pygame.draw.rect(screen, tuple(current), preview_new_rect, border_radius=6);
+        draw_alpha_rect(screen, color, preview_old_rect, theme.panel, border_radius=6);
+        draw_alpha_rect(screen, tuple(current), preview_new_rect, theme.panel, border_radius=6);
         pygame.draw.rect(screen, theme.line, preview_old_rect, 2, border_radius=6);
         pygame.draw.rect(screen, theme.line, preview_new_rect, 2, border_radius=6);
         draw_clipped_text(screen, font_small, "ANTES", theme.text, preview_old_rect.inflate(-8, -6), align="center", valign="middle");
         draw_clipped_text(screen, font_small, "NUEVO", theme.text, preview_new_rect.inflate(-8, -6), align="center", valign="middle");
-        for idx, label in enumerate(("R", "G", "B")):
+        for idx, label in enumerate(("R", "G", "B", "A")):
             draw_color_slider(screen, font_small, theme, label, slider_rects[idx], current[idx], active=(dragging_slider == idx));
-        rgb_text = "RGB: " + str(tuple(current)) + "   HEX: " + rgb_to_hex(current);
+        rgb_text = "RGBA: " + str(tuple(current)) + "   HEX: " + rgb_to_hex(current);
         draw_clipped_text(screen, font_small, rgb_text, theme.text, pygame.Rect(rect.x + 20, ok_rect.y - font_small.get_height() - 10, rect.width - 40, font_small.get_height() + 6));
         for button_rect, label in ((ok_rect, "OK"), (cancel_rect, "CANCEL")):
             pygame.draw.rect(screen, theme.button, button_rect, border_radius=6);
@@ -958,6 +1104,11 @@ class UDGCanvas(Widget):
             row, col = found;
             self.app.cursor_row = row;
             self.app.cursor_col = col;
+            if self.app.fill_mode:
+                self.app.fill_at(row, col);
+                self.drag_value = None;
+                self.last_cell = None;
+                return True;
             current = self.app.grid[row][col];
             self.drag_value = self.app.selected_color if current == -1 else -1;
             self.app.grid[row][col] = self.drag_value;
@@ -992,7 +1143,7 @@ class UDGCanvas(Widget):
                 color_index = self.app.grid[row][col];
                 if color_index >= 0:
                     inset = max(1, scale(2));
-                    pygame.draw.rect(screen, APP_COLORS[color_index], (x + inset, y + inset, max(1, cell - inset * 2), max(1, cell - inset * 2)));
+                    draw_alpha_rect(screen, APP_COLORS[color_index], pygame.Rect(x + inset, y + inset, max(1, cell - inset * 2), max(1, cell - inset * 2)), GRID_BG);
                 pygame.draw.rect(screen, GRID_LINE, (x, y, cell, cell), max(1, scale(2)));
         pygame.draw.rect(screen, GRID_LINE, bg_rect, max(1, scale(5)), border_radius=scale(24));
         cursor_x = grid_x + self.app.cursor_col * cell;
@@ -1032,6 +1183,7 @@ class UDGApp:
         self.cursor_row = 0;
         self.cursor_col = 0;
         self.scale_reference = None;
+        self.fill_mode = False;
         self.panel = TransparentPanel(pygame.Rect(0, 0, WIDTH, HEIGHT), self.theme);
         self.create_widgets();
 
@@ -1075,11 +1227,12 @@ class UDGApp:
         self.clear_button = OldStyleButton(pygame.Rect(margin, big_y, big_w, big_h), "CLEAR", self.font_big, lambda widget: self.clear(), BTN, (10, 25, 30), self.scale(20), self.theme, 2);
         self.save_button = OldStyleButton(pygame.Rect(margin + big_w + big_gap, big_y, big_w, big_h), "SAVE", self.font_big, lambda widget: self.save(), BTN, (10, 25, 30), self.scale(20), self.theme, 3);
         self.load_button = OldStyleButton(pygame.Rect(margin + (big_w + big_gap) * 2, big_y, big_w, big_h), "LOAD", self.font_big, lambda widget: self.load(), BTN, (10, 25, 30), self.scale(20), self.theme, 4);
-        half_gap = self.scale(14);
-        half_w = (WIDTH - margin * 2 - half_gap) // 2;
-        self.mode_button = OldStyleButton(pygame.Rect(margin, mode_y, half_w, mode_h), "FORMAT:  " + self.save_mode, self.font_tiny, lambda widget: self.cycle_mode(), BTN2, TEXT, self.scale(20), self.theme, 5);
-        self.edit_color_button = OldStyleButton(pygame.Rect(margin + half_w + half_gap, mode_y, half_w, mode_h), "EDIT COLOR", self.font_tiny, lambda widget: self.edit_selected_color(), BTN2, TEXT, self.scale(20), self.theme, 6);
-        for widget in (self.clear_button, self.save_button, self.load_button, self.mode_button, self.edit_color_button):
+        mode_gap = self.scale(14);
+        third_w = (WIDTH - margin * 2 - mode_gap * 2) // 3;
+        self.mode_button = OldStyleButton(pygame.Rect(margin, mode_y, third_w, mode_h), "FORMAT:  " + self.save_mode, self.font_tiny, lambda widget: self.cycle_mode(), BTN2, TEXT, self.scale(20), self.theme, 5);
+        self.edit_color_button = OldStyleButton(pygame.Rect(margin + third_w + mode_gap, mode_y, third_w, mode_h), "EDIT COLOR", self.font_tiny, lambda widget: self.edit_selected_color(), BTN2, TEXT, self.scale(20), self.theme, 6);
+        self.fill_button = OldStyleButton(pygame.Rect(margin + (third_w + mode_gap) * 2, mode_y, third_w, mode_h), "FILL: OFF", self.font_tiny, lambda widget: self.toggle_fill_mode(), BTN2, TEXT, self.scale(20), self.theme, 7);
+        for widget in (self.clear_button, self.save_button, self.load_button, self.mode_button, self.edit_color_button, self.fill_button):
             self.panel.add(widget);
 
         small_labels = [
@@ -1099,7 +1252,7 @@ class UDGApp:
             for col in range(4):
                 text, callback = small_labels[index];
                 x = margin + col * (small_w + small_gap);
-                button = OldStyleButton(pygame.Rect(x, y, small_w, small_h), text, self.font_tiny, callback, BTN2, TEXT, self.scale(14), self.theme, 7 + index);
+                button = OldStyleButton(pygame.Rect(x, y, small_w, small_h), text, self.font_tiny, callback, BTN2, TEXT, self.scale(14), self.theme, 8 + index);
                 self.panel.add(button);
                 index += 1;
 
@@ -1111,6 +1264,8 @@ class UDGApp:
     def update_statusbar(self):
         if hasattr(self, "mode_button"):
             self.mode_button.text = "FORMAT:  " + self.save_mode;
+        if hasattr(self, "fill_button"):
+            self.fill_button.text = "FILL: " + ("ON" if self.fill_mode else "OFF");
 
     def clear_scale_reference(self):
         self.scale_reference = None;
@@ -1140,6 +1295,36 @@ class UDGApp:
         self.status = "COLOR " + str(self.selected_color) + " = " + rgb_to_hex(new_color) + " " + str(new_color);
         self.create_widgets();
 
+    def toggle_fill_mode(self):
+        self.fill_mode = not self.fill_mode;
+        self.status = "FILL MODE: " + ("ON" if self.fill_mode else "OFF");
+        self.update_statusbar();
+
+    def fill_at(self, row, col):
+        if not (0 <= row < self.size and 0 <= col < self.size):
+            return;
+        target_color = self.grid[row][col];
+        replacement_color = self.selected_color;
+        if target_color == replacement_color:
+            self.status = "FILL: SAME COLOR";
+            return;
+        stack = [(row, col)];
+        filled = 0;
+        while stack:
+            current_row, current_col = stack.pop();
+            if not (0 <= current_row < self.size and 0 <= current_col < self.size):
+                continue;
+            if self.grid[current_row][current_col] != target_color:
+                continue;
+            self.grid[current_row][current_col] = replacement_color;
+            filled += 1;
+            stack.append((current_row - 1, current_col));
+            stack.append((current_row + 1, current_col));
+            stack.append((current_row, current_col - 1));
+            stack.append((current_row, current_col + 1));
+        self.status = "FILL " + str(filled) + " PIXELS";
+        self.clear_scale_reference();
+
     def clear(self):
         self.grid = empty_grid(self.size);
         self.status = "CLEARED";
@@ -1161,7 +1346,7 @@ class UDGApp:
         if not target.lower().endswith(extension):
             target += extension;
         if os.path.exists(target):
-            ok = message_box(self.screen, self.clock, "OVERWRITE", target + " exists. Press OK to overwrite or ESC to cancel.", self.theme);
+            ok = confirm_dialog(self.screen, self.clock, self.theme, "OVERWRITE", target + " exists. Overwrite it?", "OVERWRITE", "CANCEL");
             if not ok:
                 self.status = "SAVE CANCELLED";
                 return;
@@ -1172,7 +1357,7 @@ class UDGApp:
             self.status = "SAVE ERROR: " + str(exc);
 
     def load(self):
-        filename = file_dialog(self.screen, self.clock, self.theme, "LOAD GRAPHIC", [".udg", ".bin", ".xpm", ".ico"]);
+        filename = file_dialog(self.screen, self.clock, self.theme, "LOAD GRAPHIC", LOAD_EXTENSIONS);
         if filename is None:
             self.status = "LOAD CANCELLED";
             return;
@@ -1282,6 +1467,9 @@ class UDGApp:
         if event.key == pygame.K_e:
             self.edit_selected_color();
             return True;
+        if event.key == pygame.K_f:
+            self.toggle_fill_mode();
+            return True;
         if event.key == pygame.K_c:
             self.clear();
             return True;
@@ -1290,14 +1478,16 @@ class UDGApp:
     def draw(self):
         self.screen.fill(BG);
         x=40;
-        y=70;
-        fntbig=self.font_big.get_height()+self.scale(6)+1;
+        y=0;
+        fntbig=self.font_big.get_height();#+self.scale(6))+1;
         fntsml=self.font_small.get_height()+self.scale(5)+1;
         draw_clipped_text(self.screen, self.font_big, "SPECTRUM UDG PAINTER", TEXT, pygame.Rect(self.scale(x), self.scale(y), WIDTH - self.scale(80), fntbig));y+=2*fntbig;
         draw_clipped_text(self.screen, self.font_small, "Arrows cursor. Shift+arrows shift image.", TEXT, pygame.Rect(self.scale(x), self.scale(y), WIDTH - self.scale(80), fntsml));y+=fntsml;
         draw_clipped_text(self.screen, self.font_small, "+/- canvas. Shift+/- scale.", TEXT, pygame.Rect(self.scale(x), self.scale(y), WIDTH - self.scale(80), fntsml));y+=fntsml;
         
-        draw_clipped_text(self.screen, self.font_small, "COLOR: " + str(self.selected_color), TEXT, pygame.Rect(self.scale(x), self.scale(y), WIDTH - self.scale(80), fntsml));y+=fntsml;
+        selected_rgba = color_to_rgba(APP_COLORS[self.selected_color]);
+        color_info = "COLOR: " + str(self.selected_color) + " " + rgb_to_hex(selected_rgba) + " A=" + str(selected_rgba[3]) + "  FILL=" + ("ON" if self.fill_mode else "OFF");
+        draw_clipped_text(self.screen, self.font_small, color_info, TEXT, pygame.Rect(self.scale(x), self.scale(y), WIDTH - self.scale(80), fntsml));y+=fntsml;
         draw_clipped_text(self.screen, self.font_small, "FILE: " + os.path.basename(str(self.current_filename)), TEXT, pygame.Rect(self.scale(x), self.scale(y), WIDTH - self.scale(80), fntsml));y+=fntsml;
         self.panel.draw(self.screen);
         self.update_statusbar();
