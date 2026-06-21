@@ -25,6 +25,8 @@ import contextlib;
 import io;
 import os;
 import sys;
+import math;
+import pygame;
 import traceback;
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."));
@@ -43,9 +45,10 @@ for i in range(5):
 
 
 def main():
-    window("SumGUI code runner", width=720, height=720, font_size=17, theme="dos");
-    label("Code editor + Linux-like terminal", 20, 15, 580, 30, bold=True);
-    label("Run executes the editor text with stdout/stderr captured below.", 20, 42, 660, 24, font_size=14);
+    fs=30;
+    window("SumGUI code runner", width=960, height=800, font_size=fs, theme="dark");
+    label("Code editor + terminal", 20, 15, 580, 50, bold=True);
+    label("Run executes the editor text with stdout/stderr captured below.", 20, 42, 660, 24, font_size=fs);
 
     editor = textarea(
         20,
@@ -58,7 +61,7 @@ def main():
         syntax="python",
         show_v_scrollbar=True,
         show_h_scrollbar=True,
-        font_size=15,
+        font_size=fs,
     );
 
     term = terminal(
@@ -67,7 +70,7 @@ def main():
         660,
         235,
         text="$ Ready. Press RUN to execute code.",
-        font_size=15,
+        font_size=fs,
         show_v_scrollbar=True,
         show_h_scrollbar=True,
     );
@@ -102,9 +105,9 @@ def main():
         term.clear();
         term.append("$ cleared", color="prompt");
 
-    button("RUN", 20, 382, 120, 38, do=run_code, font_size=16);
-    button("CLEAR TERMINAL", 155, 382, 190, 38, do=clear_terminal, font_size=16);
-    button("ABOUT", 360, 382, 120, 38, do=lambda: alert("This is a tiny SumGUI code runner demo.", "About"), font_size=16);
+    button("RUN", 20, 382, 120, 38, do=run_code, font_size=fs);
+    button("CLEAR", 155, 382, 190, 38, do=clear_terminal, font_size=fs);
+    button("ABOUT", 360, 382, 120, 38, do=lambda: alert("This is a tiny SumGUI code runner demo.", "About"), font_size=fs);
     start();
 
 

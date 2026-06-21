@@ -36,13 +36,13 @@ try:
 except ImportError:
     Image = None;
 
-from sumgui import Button, PaletteWidget, Panel, StatusBar, ToolBar, Widget, get_events, enable_key_repeat, make_theme;
+from sumgui import Button, Panel, Widget, get_events, enable_key_repeat, make_theme;
 from sumgui.dialogs import message_box;
 from sumgui.widgets import draw_clipped_text;
 
 BASE_WIDTH = 720;
 BASE_HEIGHT = 1280;
-HEIGHT = 800;
+HEIGHT = 960;#1360
 WIDTH = int(BASE_WIDTH * (HEIGHT / BASE_HEIGHT));
 MIN_GRID_SIZE = 1;
 MAX_GRID_SIZE = 64;
@@ -68,6 +68,48 @@ SPECTRUM_COLORS = [
     (255, 255, 0),
     (255, 255, 255),
 ];
+
+RETRO_EXTRA_COLORS = [
+    (128, 64, 0),
+    (255, 128, 0),
+    (64, 64, 64),
+    (96, 128, 160),
+    (192, 192, 192),
+    (96, 0, 160),
+    (96, 112, 0),
+    (0, 96, 96),
+    (192, 160, 112),
+    (192, 96, 80),
+    (96, 176, 160),
+    (160, 128, 208),
+    (144, 176, 0),
+    (224, 112, 128),
+    (112, 160, 208),
+    (240, 224, 128),
+];
+
+CUSTOM_COLORS = [
+    (0, 96, 104),
+    (96, 176, 160),
+    (80, 104, 128),
+    (255, 88, 72),
+    (96, 0, 160),
+    (96, 112, 0),
+    (208, 144, 0),
+    (0, 40, 64),
+    (32, 80, 160),
+    (0, 80, 128),
+    (128, 0, 0),
+    (0, 104, 104),
+    (112, 0, 112),
+    (128, 128, 128),
+    (16, 16, 16),
+    (255, 255, 255),
+];
+
+APP_COLORS = SPECTRUM_COLORS + RETRO_EXTRA_COLORS + CUSTOM_COLORS;
+CUSTOM_COLOR_START = len(SPECTRUM_COLORS) + len(RETRO_EXTRA_COLORS);
+PALETTE_COLUMNS = 8;
 
 BG = (10, 30, 32);
 GRID_BG = (28, 48, 54);
@@ -107,7 +149,7 @@ def normalize_grid(grid, size=None):
 
         for col in range(min(size, len(grid[row]))):
             value = grid[row][col];
-            if isinstance(value, int) and -1 <= value <= 15:
+            if isinstance(value, int) and -1 <= value < len(APP_COLORS):
                 clean[row][col] = value;
 
     return clean;
@@ -117,7 +159,7 @@ def nearest_spectrum_color(rgb):
     best_index = 0;
     best_distance = None;
 
-    for index, color in enumerate(SPECTRUM_COLORS):
+    for index, color in enumerate(APP_COLORS):
         distance = ((int(rgb[0]) - color[0]) ** 2 + (int(rgb[1]) - color[1]) ** 2 + (int(rgb[2]) - color[2]) ** 2);
         if best_distance is None or distance < best_distance:
             best_distance = distance;
@@ -187,22 +229,29 @@ def color_to_hex(color):
     return "#{:02X}{:02X}{:02X}".format(color[0], color[1], color[2]);
 
 
+def xpm_symbols(count):
+    chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!#$%&()*+,-/:;<=>?@[]^_{|}~";
+    if count + 1 > len(chars):
+        raise ValueError("Palette too large for single-character XPM symbols.");
+    return ["."] + list(chars[:count]);
+
+
 def grid_to_xpm_text(grid):
     size = grid_size(grid);
-    symbols = [".", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
+    symbols = xpm_symbols(len(APP_COLORS));
     lines = [];
     lines.append("/* XPM */");
     lines.append("static char * udg_image[] = {");
-    lines.append('"' + str(size) + ' ' + str(size) + ' 17 1",');
+    lines.append('"' + str(size) + ' ' + str(size) + ' ' + str(len(APP_COLORS) + 1) + ' 1",');
     lines.append('". c None",');
 
-    for color_index in range(16):
-        lines.append('"' + symbols[color_index + 1] + ' c ' + color_to_hex(SPECTRUM_COLORS[color_index]) + '",');
+    for color_index, color in enumerate(APP_COLORS):
+        lines.append('"' + symbols[color_index + 1] + ' c ' + color_to_hex(color) + '",');
 
     for row_index, row in enumerate(grid):
         text_row = "";
         for cell in row:
-            text_row += symbols[cell + 1] if isinstance(cell, int) and 0 <= cell <= 15 else ".";
+            text_row += symbols[cell + 1] if isinstance(cell, int) and 0 <= cell < len(APP_COLORS) else ".";
         comma = "," if row_index < size - 1 else "";
         lines.append('"' + text_row + '"' + comma);
 
@@ -283,8 +332,8 @@ def grid_to_rgba_image(grid):
     for row in range(size):
         for col in range(size):
             color_index = grid[row][col];
-            if isinstance(color_index, int) and 0 <= color_index <= 15:
-                rgb = SPECTRUM_COLORS[color_index];
+            if isinstance(color_index, int) and 0 <= color_index < len(APP_COLORS):
+                rgb = APP_COLORS[color_index];
                 pixels[col, row] = (rgb[0], rgb[1], rgb[2], 255);
     return image;
 
@@ -326,7 +375,7 @@ def save_graphic(filename, grid, save_mode):
 
     if save_mode == "COLOR":
         size = grid_size(grid);
-        data = {"format": "UDG_COLOR_MATRIX", "rows": size, "cols": size, "palette": "ZX_SPECTRUM_16", "grid": grid};
+        data = {"format": "UDG_COLOR_MATRIX", "rows": size, "cols": size, "palette": "SUMGUI_EXTENDED_48", "colors": APP_COLORS, "grid": grid};
         with open(filename, "w", encoding="utf-8") as file:
             json.dump(data, file, indent=4);
     elif save_mode == "BINARY":
@@ -638,6 +687,243 @@ class OldStyleButton(Button):
         draw_clipped_text(screen, self.font, self.text, self.fg_color, self.rect.inflate(-8, -4), align="center", valign="middle");
 
 
+class ExtendedPaletteWidget(Widget):
+    def __init__(self, rect, colors, columns, cell_size, callback, theme, tab_index=20):
+        super().__init__(rect, focusable=True, tab_index=tab_index);
+        self.colors = colors;
+        self.columns = max(1, int(columns));
+        self.cell_size = max(8, int(cell_size));
+        self.callback = callback;
+        self.theme = theme;
+        self.selected = 0;
+        self.font = pygame.font.SysFont("monospace", max(8, self.cell_size // 3), bold=True);
+
+    def color_rect(self, index):
+        col = index % self.columns;
+        row = index // self.columns;
+        x = self.rect.x + col * self.cell_size;
+        y = self.rect.y + row * self.cell_size;
+        inset = max(2, self.cell_size // 12);
+        return pygame.Rect(x + inset, y + inset, self.cell_size - inset * 2, self.cell_size - inset * 2);
+
+    def index_at(self, pos):
+        if not self.rect.collidepoint(pos):
+            return None;
+        col = (pos[0] - self.rect.x) // self.cell_size;
+        row = (pos[1] - self.rect.y) // self.cell_size;
+        index = int(row * self.columns + col);
+        if 0 <= index < len(self.colors):
+            return index;
+        return None;
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            index = self.index_at(event.pos);
+            if index is None:
+                return False;
+            self.selected = index;
+            if self.callback:
+                self.callback(index);
+            return True;
+        return False;
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, self.theme.panel, self.rect, border_radius=max(4, self.cell_size // 8));
+        pygame.draw.rect(screen, self.theme.line, self.rect, max(1, self.cell_size // 18), border_radius=max(4, self.cell_size // 8));
+        for index, color in enumerate(self.colors):
+            rect = self.color_rect(index);
+            pygame.draw.rect(screen, color, rect, border_radius=max(2, self.cell_size // 10));
+            pygame.draw.rect(screen, self.theme.line, rect, max(1, self.cell_size // 20), border_radius=max(2, self.cell_size // 10));
+            if index == self.selected:
+                pygame.draw.rect(screen, (255, 255, 255), rect.inflate(max(4, self.cell_size // 7), max(4, self.cell_size // 7)), max(2, self.cell_size // 12), border_radius=max(4, self.cell_size // 8));
+            label = str(index);
+            label_rect = pygame.Rect(rect.x, rect.y - self.font.get_height() + 2, rect.width, self.font.get_height());
+            draw_clipped_text(screen, self.font, label, self.theme.text, label_rect, align="center", valign="middle");
+
+
+
+def rgb_to_hex(color):
+    return "#{:02X}{:02X}{:02X}".format(clamp(color[0], 0, 255), clamp(color[1], 0, 255), clamp(color[2], 0, 255));
+
+
+def hex_to_rgb(text):
+    value = text.strip();
+    if value.startswith("#"):
+        value = value[1:];
+    if len(value) != 6:
+        return None;
+    try:
+        return (int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16));
+    except ValueError:
+        return None;
+
+
+def parse_color_value(text):
+    value = text.strip();
+    if value.startswith("#") or (len(value) == 6 and all(char in "0123456789abcdefABCDEF" for char in value)):
+        return hex_to_rgb(value);
+    if "," in value:
+        parts = [part.strip() for part in value.split(",")];
+    else:
+        parts = [part.strip() for part in value.split()];
+    if len(parts) == 3 and all(part.isdigit() for part in parts):
+        return tuple(clamp(int(part), 0, 255) for part in parts);
+    return None;
+
+
+def draw_color_slider(screen, font, theme, label, rect, value, active=False):
+    pygame.draw.rect(screen, theme.bg, rect, border_radius=6);
+    pygame.draw.rect(screen, theme.cursor if active else theme.line, rect, 2, border_radius=6);
+    text_rect = pygame.Rect(rect.x + 8, rect.y + 4, rect.width - 16, font.get_height() + 4);
+    draw_clipped_text(screen, font, label + ": " + str(value), theme.text, text_rect);
+    bar_rect = pygame.Rect(rect.x + 14, rect.centery + font.get_height() // 4, rect.width - 28, max(6, rect.height // 7));
+    pygame.draw.rect(screen, theme.line, bar_rect, border_radius=3);
+    fill_w = int(bar_rect.width * value / 255);
+    if fill_w > 0:
+        pygame.draw.rect(screen, theme.button, pygame.Rect(bar_rect.x, bar_rect.y, fill_w, bar_rect.height), border_radius=3);
+    knob_x = bar_rect.x + int(bar_rect.width * value / 255);
+    knob_rect = pygame.Rect(knob_x - 6, bar_rect.centery - 12, 12, 24);
+    pygame.draw.rect(screen, theme.cursor, knob_rect, border_radius=5);
+    draw_clipped_text(screen, font, "0", theme.muted, pygame.Rect(bar_rect.x, bar_rect.bottom + 2, 40, font.get_height()));
+    draw_clipped_text(screen, font, "255", theme.muted, pygame.Rect(bar_rect.right - 45, bar_rect.bottom + 2, 45, font.get_height()), align="right");
+
+
+def rgb_dialog(screen, clock, theme, title, color):
+    font_big = pygame.font.SysFont("monospace", max(16, screen.get_height() // 34), bold=True);
+    font_small = pygame.font.SysFont("monospace", max(12, screen.get_height() // 50), bold=True);
+    width, height = screen.get_size();
+    rect = pygame.Rect(width // 14, height // 5, width * 12 // 14, height * 3 // 5);
+    input_rect = pygame.Rect(rect.x + 20, rect.y + height // 10, rect.width - 40, height // 16);
+    preview_old_rect = pygame.Rect(rect.x + 20, input_rect.bottom + 18, rect.width // 2 - 32, height // 14);
+    preview_new_rect = pygame.Rect(rect.centerx + 12, input_rect.bottom + 18, rect.width // 2 - 32, height // 14);
+    slider_h = max(54, height // 17);
+    slider_gap = max(10, height // 90);
+    slider_top = preview_old_rect.bottom + height // 24;
+    slider_rects = [pygame.Rect(rect.x + 20, slider_top + idx * (slider_h + slider_gap), rect.width - 40, slider_h) for idx in range(3)];
+    ok_rect = pygame.Rect(rect.x + 20, rect.bottom - height // 13, rect.width // 2 - 30, height // 18);
+    cancel_rect = pygame.Rect(rect.centerx + 10, rect.bottom - height // 13, rect.width // 2 - 30, height // 18);
+    current = [clamp(color[0], 0, 255), clamp(color[1], 0, 255), clamp(color[2], 0, 255)];
+    text = rgb_to_hex(current);
+    cursor = len(text);
+    cursor_visible = True;
+    cursor_ms = 0;
+    dragging_slider = None;
+    pygame.key.start_text_input();
+    pygame.key.set_text_input_rect(input_rect);
+
+    def update_from_text():
+        nonlocal current;
+        parsed = parse_color_value(text);
+        if parsed is not None:
+            current = [parsed[0], parsed[1], parsed[2]];
+            return True;
+        return False;
+
+    def update_slider(index, pos_x):
+        nonlocal text, cursor;
+        bar_rect = pygame.Rect(slider_rects[index].x + 14, slider_rects[index].centery + font_small.get_height() // 4, slider_rects[index].width - 28, max(6, slider_rects[index].height // 7));
+        current[index] = clamp(round((pos_x - bar_rect.x) * 255 / max(1, bar_rect.width)), 0, 255);
+        text = rgb_to_hex(current);
+        cursor = len(text);
+
+    while True:
+        dt = clock.tick(60);
+        cursor_ms += dt;
+        if cursor_ms >= 500:
+            cursor_visible = not cursor_visible;
+            cursor_ms = 0;
+        for event in get_events():
+            if event.type == pygame.QUIT:
+                pygame.key.stop_text_input();
+                return None;
+            if event.type == pygame.TEXTINPUT:
+                for char in event.text:
+                    if char in "0123456789abcdefABCDEF#, ":
+                        text = text[:cursor] + char + text[cursor:];
+                        cursor += 1;
+                        update_from_text();
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.key.stop_text_input();
+                    return None;
+                if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                    if update_from_text():
+                        pygame.key.stop_text_input();
+                        return tuple(current);
+                if event.key == pygame.K_BACKSPACE and cursor > 0:
+                    text = text[:cursor - 1] + text[cursor:];
+                    cursor -= 1;
+                    update_from_text();
+                if event.key == pygame.K_DELETE and cursor < len(text):
+                    text = text[:cursor] + text[cursor + 1:];
+                    update_from_text();
+                if event.key == pygame.K_LEFT:
+                    cursor = max(0, cursor - 1);
+                if event.key == pygame.K_RIGHT:
+                    cursor = min(len(text), cursor + 1);
+                if event.key == pygame.K_HOME:
+                    cursor = 0;
+                if event.key == pygame.K_END:
+                    cursor = len(text);
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if ok_rect.collidepoint(event.pos):
+                    if update_from_text():
+                        pygame.key.stop_text_input();
+                        return tuple(current);
+                elif cancel_rect.collidepoint(event.pos):
+                    pygame.key.stop_text_input();
+                    return None;
+                elif input_rect.collidepoint(event.pos):
+                    rel_x = max(0, event.pos[0] - input_rect.x - 10);
+                    cursor = 0;
+                    for pos in range(len(text) + 1):
+                        if font_big.size(text[:pos])[0] <= rel_x:
+                            cursor = pos;
+                    pygame.key.set_text_input_rect(input_rect);
+                else:
+                    for idx, slider_rect in enumerate(slider_rects):
+                        if slider_rect.collidepoint(event.pos):
+                            dragging_slider = idx;
+                            update_slider(idx, event.pos[0]);
+                            break;
+            if event.type == pygame.MOUSEBUTTONUP:
+                dragging_slider = None;
+            if event.type == pygame.MOUSEMOTION and dragging_slider is not None:
+                update_slider(dragging_slider, event.pos[0]);
+
+        pygame.draw.rect(screen, theme.panel, rect, border_radius=8);
+        pygame.draw.rect(screen, theme.line, rect, 3, border_radius=8);
+        draw_clipped_text(screen, font_big, title, theme.text, pygame.Rect(rect.x + 20, rect.y + 16, rect.width - 40, font_big.get_height() + 8));
+        draw_clipped_text(screen, font_small, "HEX editable (#RRGGBB) o RGB editable (R,G,B)", theme.muted, pygame.Rect(rect.x + 20, rect.y + 58, rect.width - 40, font_small.get_height() + 8));
+        pygame.draw.rect(screen, theme.bg, input_rect, border_radius=4);
+        pygame.draw.rect(screen, theme.line, input_rect, 2, border_radius=4);
+        input_inner = pygame.Rect(input_rect.x + 10, input_rect.y + 8, input_rect.width - 20, input_rect.height - 16);
+        visible_text, view_start = visible_input_window(font_big, text, cursor, input_inner.width - 8);
+        before_cursor = text[view_start:cursor];
+        previous_clip = screen.get_clip();
+        screen.set_clip(input_inner);
+        screen.blit(font_big.render(visible_text, True, theme.text), (input_inner.x, input_inner.y));
+        cursor_x = input_inner.x + font_big.size(before_cursor)[0] + 2;
+        if cursor_visible:
+            pygame.draw.rect(screen, theme.cursor, pygame.Rect(cursor_x, input_inner.y, 4, input_inner.height));
+        screen.set_clip(previous_clip);
+        pygame.draw.rect(screen, color, preview_old_rect, border_radius=6);
+        pygame.draw.rect(screen, tuple(current), preview_new_rect, border_radius=6);
+        pygame.draw.rect(screen, theme.line, preview_old_rect, 2, border_radius=6);
+        pygame.draw.rect(screen, theme.line, preview_new_rect, 2, border_radius=6);
+        draw_clipped_text(screen, font_small, "ANTES", theme.text, preview_old_rect.inflate(-8, -6), align="center", valign="middle");
+        draw_clipped_text(screen, font_small, "NUEVO", theme.text, preview_new_rect.inflate(-8, -6), align="center", valign="middle");
+        for idx, label in enumerate(("R", "G", "B")):
+            draw_color_slider(screen, font_small, theme, label, slider_rects[idx], current[idx], active=(dragging_slider == idx));
+        rgb_text = "RGB: " + str(tuple(current)) + "   HEX: " + rgb_to_hex(current);
+        draw_clipped_text(screen, font_small, rgb_text, theme.text, pygame.Rect(rect.x + 20, ok_rect.y - font_small.get_height() - 10, rect.width - 40, font_small.get_height() + 6));
+        for button_rect, label in ((ok_rect, "OK"), (cancel_rect, "CANCEL")):
+            pygame.draw.rect(screen, theme.button, button_rect, border_radius=6);
+            pygame.draw.rect(screen, theme.line, button_rect, 2, border_radius=6);
+            draw_clipped_text(screen, font_big, label, theme.button_text, button_rect, align="center", valign="middle");
+        pygame.display.flip();
+
+
 class UDGCanvas(Widget):
     def __init__(self, rect, app):
         super().__init__(rect, focusable=True, tab_index=1);
@@ -706,7 +992,7 @@ class UDGCanvas(Widget):
                 color_index = self.app.grid[row][col];
                 if color_index >= 0:
                     inset = max(1, scale(2));
-                    pygame.draw.rect(screen, SPECTRUM_COLORS[color_index], (x + inset, y + inset, max(1, cell - inset * 2), max(1, cell - inset * 2)));
+                    pygame.draw.rect(screen, APP_COLORS[color_index], (x + inset, y + inset, max(1, cell - inset * 2), max(1, cell - inset * 2)));
                 pygame.draw.rect(screen, GRID_LINE, (x, y, cell, cell), max(1, scale(2)));
         pygame.draw.rect(screen, GRID_LINE, bg_rect, max(1, scale(5)), border_radius=scale(24));
         cursor_x = grid_x + self.app.cursor_col * cell;
@@ -764,11 +1050,10 @@ class UDGApp:
         small_h = self.scale(64);
         mode_h = self.scale(70);
 
-        palette_gap = self.scale(8);
-        palette_cell = min(self.scale(70), max(self.scale(32), (WIDTH - margin * 2 - palette_gap * 7) // 8));
-        palette_stride = palette_cell + palette_gap;
-        palette_w = 8 * palette_stride;
-        palette_h = 2 * palette_stride;
+        palette_rows = int(math.ceil(len(APP_COLORS) / PALETTE_COLUMNS));
+        palette_cell = min(self.scale(44), max(self.scale(28), (WIDTH - margin * 2) // PALETTE_COLUMNS));
+        palette_w = PALETTE_COLUMNS * palette_cell;
+        palette_h = palette_rows * palette_cell;
         palette_y = HEIGHT - palette_h - self.scale(18);
         palette_rect = pygame.Rect((WIDTH - palette_w) // 2, palette_y, palette_w, palette_h);
 
@@ -790,8 +1075,11 @@ class UDGApp:
         self.clear_button = OldStyleButton(pygame.Rect(margin, big_y, big_w, big_h), "CLEAR", self.font_big, lambda widget: self.clear(), BTN, (10, 25, 30), self.scale(20), self.theme, 2);
         self.save_button = OldStyleButton(pygame.Rect(margin + big_w + big_gap, big_y, big_w, big_h), "SAVE", self.font_big, lambda widget: self.save(), BTN, (10, 25, 30), self.scale(20), self.theme, 3);
         self.load_button = OldStyleButton(pygame.Rect(margin + (big_w + big_gap) * 2, big_y, big_w, big_h), "LOAD", self.font_big, lambda widget: self.load(), BTN, (10, 25, 30), self.scale(20), self.theme, 4);
-        self.mode_button = OldStyleButton(pygame.Rect(margin, mode_y, WIDTH - margin * 2, mode_h), "FORMAT:  " + self.save_mode, self.font_big, lambda widget: self.cycle_mode(), BTN2, TEXT, self.scale(20), self.theme, 5);
-        for widget in (self.clear_button, self.save_button, self.load_button, self.mode_button):
+        half_gap = self.scale(14);
+        half_w = (WIDTH - margin * 2 - half_gap) // 2;
+        self.mode_button = OldStyleButton(pygame.Rect(margin, mode_y, half_w, mode_h), "FORMAT:  " + self.save_mode, self.font_tiny, lambda widget: self.cycle_mode(), BTN2, TEXT, self.scale(20), self.theme, 5);
+        self.edit_color_button = OldStyleButton(pygame.Rect(margin + half_w + half_gap, mode_y, half_w, mode_h), "EDIT COLOR", self.font_tiny, lambda widget: self.edit_selected_color(), BTN2, TEXT, self.scale(20), self.theme, 6);
+        for widget in (self.clear_button, self.save_button, self.load_button, self.mode_button, self.edit_color_button):
             self.panel.add(widget);
 
         small_labels = [
@@ -811,11 +1099,11 @@ class UDGApp:
             for col in range(4):
                 text, callback = small_labels[index];
                 x = margin + col * (small_w + small_gap);
-                button = OldStyleButton(pygame.Rect(x, y, small_w, small_h), text, self.font_tiny, callback, BTN2, TEXT, self.scale(14), self.theme, 6 + index);
+                button = OldStyleButton(pygame.Rect(x, y, small_w, small_h), text, self.font_tiny, callback, BTN2, TEXT, self.scale(14), self.theme, 7 + index);
                 self.panel.add(button);
                 index += 1;
 
-        self.palette = PaletteWidget(palette_rect, SPECTRUM_COLORS, palette_stride, self.select_color, self.theme, tab_index=20);
+        self.palette = ExtendedPaletteWidget(palette_rect, APP_COLORS, PALETTE_COLUMNS, palette_cell, self.select_color, self.theme, tab_index=20);
         self.palette.selected = self.selected_color;
         self.panel.add(self.palette);
         self.update_statusbar();
@@ -840,6 +1128,17 @@ class UDGApp:
         self.status = "COLOR: " + str(index);
         if hasattr(self, "palette"):
             self.palette.selected = index;
+
+
+    def edit_selected_color(self):
+        old_color = APP_COLORS[self.selected_color];
+        new_color = rgb_dialog(self.screen, self.clock, self.theme, "EDIT COLOR " + str(self.selected_color), old_color);
+        if new_color is None:
+            self.status = "COLOR EDIT CANCELLED";
+            return;
+        APP_COLORS[self.selected_color] = new_color;
+        self.status = "COLOR " + str(self.selected_color) + " = " + rgb_to_hex(new_color) + " " + str(new_color);
+        self.create_widgets();
 
     def clear(self):
         self.grid = empty_grid(self.size);
@@ -980,6 +1279,9 @@ class UDGApp:
         if event.key == pygame.K_m:
             self.cycle_mode();
             return True;
+        if event.key == pygame.K_e:
+            self.edit_selected_color();
+            return True;
         if event.key == pygame.K_c:
             self.clear();
             return True;
@@ -987,10 +1289,16 @@ class UDGApp:
 
     def draw(self):
         self.screen.fill(BG);
-        draw_clipped_text(self.screen, self.font_big, "SPECTRUM UDG PAINTER", TEXT, pygame.Rect(self.scale(40), self.scale(70), WIDTH - self.scale(80), self.font_big.get_height() + self.scale(6)));
-        draw_clipped_text(self.screen, self.font_small, "Arrows cursor. Shift+arrows shift image. +/- canvas. Shift+/- scale.", TEXT, pygame.Rect(self.scale(40), self.scale(125), WIDTH - self.scale(80), self.font_small.get_height() + self.scale(5)));
-        draw_clipped_text(self.screen, self.font_small, "COLOR: " + str(self.selected_color), TEXT, pygame.Rect(self.scale(40), self.scale(155), WIDTH - self.scale(80), self.font_small.get_height() + self.scale(5)));
-        draw_clipped_text(self.screen, self.font_small, "FILE: " + os.path.basename(str(self.current_filename)), TEXT, pygame.Rect(self.scale(40), self.scale(185), WIDTH - self.scale(80), self.font_small.get_height() + self.scale(5)));
+        x=40;
+        y=70;
+        fntbig=self.font_big.get_height()+self.scale(6)+1;
+        fntsml=self.font_small.get_height()+self.scale(5)+1;
+        draw_clipped_text(self.screen, self.font_big, "SPECTRUM UDG PAINTER", TEXT, pygame.Rect(self.scale(x), self.scale(y), WIDTH - self.scale(80), fntbig));y+=2*fntbig;
+        draw_clipped_text(self.screen, self.font_small, "Arrows cursor. Shift+arrows shift image.", TEXT, pygame.Rect(self.scale(x), self.scale(y), WIDTH - self.scale(80), fntsml));y+=fntsml;
+        draw_clipped_text(self.screen, self.font_small, "+/- canvas. Shift+/- scale.", TEXT, pygame.Rect(self.scale(x), self.scale(y), WIDTH - self.scale(80), fntsml));y+=fntsml;
+        
+        draw_clipped_text(self.screen, self.font_small, "COLOR: " + str(self.selected_color), TEXT, pygame.Rect(self.scale(x), self.scale(y), WIDTH - self.scale(80), fntsml));y+=fntsml;
+        draw_clipped_text(self.screen, self.font_small, "FILE: " + os.path.basename(str(self.current_filename)), TEXT, pygame.Rect(self.scale(x), self.scale(y), WIDTH - self.scale(80), fntsml));y+=fntsml;
         self.panel.draw(self.screen);
         self.update_statusbar();
 

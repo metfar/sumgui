@@ -117,7 +117,7 @@ def main():
     global DRAW_CANVAS;
     global STATUS_LABEL;
 
-    window("SumGUI Canvas BGI demo", width=720, height=720, font_size=18);
+    window("SumGUI Canvas BGI demo", width=1074, height=2102, font_size=18);
     label("SumGUI / CanvasArea demo", 20, 16, 420, 34, font_size=24, bold=True);
     label("Pick a figure. Click the canvas to draw. LINE uses two clicks.", 20, 52, 650, 28);
 
