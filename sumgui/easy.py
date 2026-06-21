@@ -33,8 +33,19 @@ from .widgets import Button, CanvasArea, Label, Panel, Slider, TextArea, TextInp
 _app = None;
 
 
+def _alpha_value(value, default=255):
+    if value is None:
+        return int(default);
+    if isinstance(value, float) and 0.0 <= value <= 1.0:
+        return int(round(value * 255.0));
+    try:
+        return max(0, min(255, int(value)));
+    except (TypeError, ValueError):
+        return int(default);
+
+
 class AlertBox(Widget):
-    def __init__(self, rect, title, message, font, big_font, theme, on_close=None):
+    def __init__(self, rect, title, message, font, big_font, theme, on_close=None, dialog_alpha=255, curtain_alpha=120):
         super().__init__(rect, focusable=True);
         self.title = str(title);
         self.message = str(message);
@@ -42,6 +53,8 @@ class AlertBox(Widget):
         self.big_font = big_font;
         self.theme = theme;
         self.on_close = on_close;
+        self.dialog_alpha = _alpha_value(dialog_alpha, 255);
+        self.curtain_alpha = _alpha_value(curtain_alpha, 120);
         self.closed = False;
         self.ok_pressed = False;
 
@@ -96,13 +109,20 @@ class AlertBox(Widget):
     def update(self, dt):
         return None;
 
-    def draw(self, screen):
+    def _draw_curtain(self, screen):
+        if self.curtain_alpha <= 0:
+            return None;
+        if self.curtain_alpha >= 255:
+            pygame.draw.rect(screen, (0, 0, 0), self.rect);
+            return None;
         overlay = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA);
-        overlay.fill((0, 0, 0, 120));
+        overlay.fill((0, 0, 0, self.curtain_alpha));
         screen.blit(overlay, self.rect.topleft);
+        return None;
 
-        box = self.box_rect();
-        ok = self.ok_rect();
+    def _draw_box(self, screen, offset_x=0, offset_y=0):
+        box = self.box_rect().move(-offset_x, -offset_y);
+        ok = self.ok_rect().move(-offset_x, -offset_y);
 
         pygame.draw.rect(screen, self.theme.panel, box, border_radius=8);
         pygame.draw.rect(screen, self.theme.line, box, 3, border_radius=8);
@@ -126,6 +146,21 @@ class AlertBox(Widget):
         pygame.draw.rect(screen, color, ok, border_radius=8);
         pygame.draw.rect(screen, self.theme.line, ok, 2, border_radius=8);
         draw_clipped_text(screen, self.big_font, "OK", self.theme.button_text, ok, align="center", valign="middle");
+        return None;
+
+    def draw(self, screen):
+        self._draw_curtain(screen);
+        if self.dialog_alpha >= 255:
+            self._draw_box(screen);
+            return None;
+        if self.dialog_alpha <= 0:
+            return None;
+        box = self.box_rect();
+        dialog_surface = pygame.Surface((box.width, box.height), pygame.SRCALPHA);
+        self._draw_box(dialog_surface, box.x, box.y);
+        dialog_surface.set_alpha(self.dialog_alpha);
+        screen.blit(dialog_surface, box.topleft);
+        return None;
 
 
 class EasyApp:
@@ -319,8 +354,12 @@ def size(w, h):
 def logical_pos(x, y):
     return app().to_logical(x, y);
 
-def alert(message, title="SumGUI", on_close=None):
+def alert(message, title="SumGUI", on_close=None, dialog_alpha=255, curtain_alpha=120, alpha=None, opacity=None):
     current = app();
+    if alpha is not None:
+        dialog_alpha = alpha;
+    if opacity is not None:
+        dialog_alpha = opacity;
     dialog = AlertBox(
         pygame.Rect(0, 0, current.width, current.height),
         title,
@@ -329,14 +368,16 @@ def alert(message, title="SumGUI", on_close=None):
         current.big_font,
         current.theme,
         on_close,
+        dialog_alpha=dialog_alpha,
+        curtain_alpha=curtain_alpha,
     );
     dialog.owner = current;
     current.show_modal(dialog);
     return dialog;
 
 
-def message(message, title="SumGUI", on_close=None):
-    return alert(message, title, on_close);
+def message(message, title="SumGUI", on_close=None, dialog_alpha=255, curtain_alpha=120, alpha=None, opacity=None):
+    return alert(message, title, on_close, dialog_alpha, curtain_alpha, alpha, opacity);
 
 
 def ask(title="Input", message="", default_text="", max_length=-1):

@@ -26,7 +26,7 @@
 # before the top-level package has forced pygame to load.
 import pygame;
 
-__version__ = "0.0.1a26";
+__version__ = "0.0.1a28";
 
 from .theme import C64_COLORS, DEFAULT_THEME, DOS_COLORS, MSX_COLORS, SPECTRUM_COLORS, THEMES, Theme, make_theme;
 from .scale import Scale;

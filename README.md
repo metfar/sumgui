@@ -1,4 +1,4 @@
-# SumGUI / ΣGUI alpha 0.0.1a27
+# SumGUI / ΣGUI alpha 0.0.1a28
 
 A tiny, portable and beginner-friendly GUI toolkit for Python and Pygame.
 
@@ -205,7 +205,7 @@ The demo includes a `TextArea` that serves as a tiny code editor, a `RUN` button
 This is intentionally simple and local. Running arbitrary code is dangerous; only execute code you trust.
 
 
-## 0.0.1a27 UDG Painter Reborn
+## 0.0.1a28 UDG Painter Reborn
 
 - ZX-Spectrum-like-UDG-Painter rewritten palette
 
@@ -213,7 +213,7 @@ This is intentionally simple and local. Running arbitrary code is dangerous; onl
 
 
 
-## 0.0.1a27 Logical scaling
+## 0.0.1a28 Logical scaling
 
 SumGUI now has a logical coordinate system in `sumgui.easy`.  The default logical canvas is `720x720`; widgets created through the easy helpers are automatically scaled to the real screen.
 
@@ -255,16 +255,33 @@ app.to_logical(real_x, real_y);
 This lets applications like UDG Painter stop doing their own screen-size arithmetic and use one logical coordinate space instead.
 
 
-## 0.0.1a27 PyDroid3 pygame bootstrap
+## 0.0.1a28 PyDroid3 pygame bootstrap
 
 - SumGUI now imports `pygame` from the package bootstrap before loading internal modules.
 - `import sumgui.easy as sg` should work directly in PyDroid3 without requiring `import pygame` first in user programs.
 
 
+## 0.0.1a28 Dialog alpha controls
+
+`sg.alert()` and `sg.message()` now accept independent alpha controls for the dialog and the background curtain:
+
+```python
+sg.alert(
+    "Hola mundo",
+    title="Mensaje",
+    dialog_alpha=255,
+    curtain_alpha=120,
+);
+```
+
+Both values accept either `0..255` integers or `0.0..1.0` floats. The aliases `alpha=` and `opacity=` affect the dialog alpha.
+
+```python
+sg.message("Suavecito", curtain_alpha=80, opacity=0.92);
+```
+
+Defaults keep the dialog fully opaque and dim the background moderately.
+
 
 <p align=center><b>- oOo -</b></p>
-
-
-
-
 
