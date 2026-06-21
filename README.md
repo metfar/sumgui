@@ -1,4 +1,4 @@
-# SumGUI / ΣGUI alpha 0.0.1a21
+# SumGUI / ΣGUI alpha 0.0.1a22
 
 A tiny, portable and beginner-friendly GUI toolkit for Python and Pygame.
 
@@ -205,20 +205,11 @@ The demo includes a `TextArea` that serves as a tiny code editor, a `RUN` button
 This is intentionally simple and local. Running arbitrary code is dangerous; only execute code you trust.
 
 
-## 0.0.1a21 Text input fixes
+## 0.0.1a22 UDG Painter Reborn
 
-- Added `TextInput` widget.
-- Single-line inputs scroll horizontally while the cursor moves.
-- Cursor is clipped inside the field.
-- Backspace/Delete repeat through SumGUI key repeat.
-- Added `input_box()` and `easy.ask()` modal input helpers.
-- Added `examples/demo_textinput_keyrepeat.py`.
+- ZX-Spectrum-like-UDG-Painter rewritten palette
 
-![Demo TextInput](docs/demo_textinput_keyrepeat.png)
-
-- ZX-Spectrum-like-UDG-Painter rewritten using sumGUI at directory udg_painter_reborn
-
-![Demo UDG_Reborn](docs/udg_painter_reborn.png)
+![Demo UDG_Reborn](docs/udg.png)
 
 
 <p align=center><b>- oOo -</b></p>

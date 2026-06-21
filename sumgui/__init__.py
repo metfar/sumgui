@@ -21,7 +21,7 @@
 #  
 #
 
-__version__ = "0.0.1a21";
+__version__ = "0.0.1a22";
 
 from .theme import C64_COLORS, DEFAULT_THEME, DOS_COLORS, MSX_COLORS, SPECTRUM_COLORS, THEMES, Theme, make_theme;
 from .scale import Scale;
