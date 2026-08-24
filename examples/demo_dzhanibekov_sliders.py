@@ -102,8 +102,8 @@ def draw_plot(canvas, surface, rect):
 def main():
     app = sg.window(
         "Dzhanibekov interactivo",
-        1080,
-        1360,
+        960,
+        720,
         base_width=720,
         base_height=720,
         scale_mode="fit",

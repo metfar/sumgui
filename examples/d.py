@@ -24,7 +24,7 @@
 import sumgui.easy as sg;
 
 
-sg.window("Mi programa", 1080, 2100);
+sg.window("Mi programa", 960,720);
 
 sg.label("Nombre:", 20, 20, 120, 60);
 nombre = sg.textinput(150, 20, 300, 40, placeholder="Nombre");
