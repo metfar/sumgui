@@ -25,7 +25,7 @@ from pathlib import Path;
 import sys;
 import types;
 
-from sumui import GraphicsCommand, spectrum_mode;
+from sumui import GraphicsCommand, basic_mode, spectrum_mode;
 
 
 class FakeRect:
@@ -155,3 +155,11 @@ def test_graphics_window_consumes_shared_basic_stream(monkeypatch):
     window.handle(GraphicsCommand("close"));
     assert window.closed is True;
     assert pygame._display_state["quit"] is True;
+
+
+def test_basic_mode_uses_qbasic_gwbasic_16_color_palette(monkeypatch):
+    module, unused_pygame = _load_graphics(monkeypatch);
+    surface = module.GraphicsSurface(basic_mode(4, 4));
+    surface.set_ink(14);
+    surface.plot(1, 1);
+    assert surface.point(1, 1)[:3] == module.BASIC16_PALETTE[14];

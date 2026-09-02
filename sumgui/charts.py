@@ -156,6 +156,8 @@ class ChartView(ChartBase):
     def _draw_bar(self, screen):
         if not self.spec.series:
             return;
+        if str(self.spec.option("orientation", "vertical")).lower() in ("horizontal", "h", "hbar"):
+            return self._draw_horizontal_bar(screen);
         chart = self.data_rect();
         categories = list(self.spec.categories);
         series_count = max(1, len(self.spec.series));
@@ -186,10 +188,92 @@ class ChartView(ChartBase):
             x = chart.x + index * group_width;
             draw_clipped_text(screen, self.font, label, self.theme.muted, pygame.Rect(x, chart.bottom + 4, group_width, self.font.get_height()), align="center");
 
+    def _draw_horizontal_bar(self, screen):
+        chart = self.data_rect();
+        categories = list(self.spec.categories);
+        series_count = max(1, len(self.spec.series));
+        value_count = max([len(series.values) for series in self.spec.series] or [0]);
+        if value_count <= 0:
+            return;
+        all_values = [value for series in self.spec.series for value in series.values];
+        min_value = self.spec.x_axis.minimum if self.spec.x_axis.minimum is not None else min([0.0] + all_values);
+        max_value = self.spec.x_axis.maximum if self.spec.x_axis.maximum is not None else max([0.0] + all_values);
+        if max_value <= min_value:
+            max_value = min_value + 1.0;
+        pygame.draw.line(screen, self.theme.line, (chart.x, chart.y), (chart.x, chart.bottom), 1);
+        group_height = max(1, chart.height // value_count);
+        bar_height = max(1, (group_height - 4) // series_count);
+        zero_x = chart.x + int((0.0 - min_value) * chart.width / (max_value - min_value));
+        zero_x = max(chart.x, min(chart.right, zero_x));
+        for series_index, series in enumerate(self.spec.series):
+            color = self.theme.palette[series_index % len(self.theme.palette)] if self.theme.palette else self.theme.button;
+            for index, value in enumerate(series.values):
+                y = chart.y + index * group_height + 2 + series_index * bar_height;
+                value_x = chart.x + int((value - min_value) * chart.width / (max_value - min_value));
+                left = min(zero_x, value_x);
+                right = max(zero_x, value_x);
+                rect = pygame.Rect(left, y, max(1, right - left), max(1, bar_height - 1));
+                pygame.draw.rect(screen, color, rect);
+        for index in range(value_count):
+            label = categories[index] if index < len(categories) else str(index + 1);
+            y = chart.y + index * group_height;
+            draw_clipped_text(screen, self.font, label, self.theme.muted, pygame.Rect(self.rect.x + 4, y, max(1, chart.x - self.rect.x - 8), group_height), align="right", valign="middle");
+        for index in range(3):
+            fraction = index / 2.0;
+            x = chart.x + int(fraction * chart.width);
+            value = min_value + fraction * (max_value - min_value);
+            pygame.draw.line(screen, self.theme.line, (x, chart.bottom), (x, chart.bottom + 3), 1);
+            draw_clipped_text(screen, self.font, _nice_number(value), self.theme.muted, pygame.Rect(x - 24, chart.bottom + 4, 48, self.font.get_height()), align="center");
+
+    def _draw_radar(self, screen):
+        if not self.spec.series:
+            return;
+        values = list(self.spec.series[0].values);
+        if len(values) < 3:
+            return;
+        categories = list(self.spec.categories);
+        body = pygame.Rect(self.rect.x + 32, self.rect.y + 34, max(1, self.rect.width - 64), max(1, self.rect.height - 68));
+        center = body.center;
+        radius = max(1, min(body.width, body.height) // 2 - 12);
+        maximum = self.spec.y_axis.maximum if self.spec.y_axis.maximum is not None else max([1.0] + [abs(value) for value in values]);
+        minimum = self.spec.y_axis.minimum if self.spec.y_axis.minimum is not None else 0.0;
+        if maximum <= minimum:
+            maximum = minimum + 1.0;
+        count = len(values);
+        axes = [];
+        for index in range(count):
+            angle = -math.pi / 2.0 + math.tau * index / count;
+            axes.append((center[0] + int(math.cos(angle) * radius), center[1] + int(math.sin(angle) * radius), angle));
+        for level in (0.25, 0.5, 0.75, 1.0):
+            points = [(center[0] + int(math.cos(angle) * radius * level), center[1] + int(math.sin(angle) * radius * level)) for unused_x, unused_y, angle in axes];
+            pygame.draw.polygon(screen, self.theme.line, points, 1);
+        for index, (x, y, angle) in enumerate(axes):
+            pygame.draw.line(screen, self.theme.line, center, (x, y), 1);
+            label = categories[index] if index < len(categories) else str(index + 1);
+            lx = center[0] + int(math.cos(angle) * (radius + 18));
+            ly = center[1] + int(math.sin(angle) * (radius + 18));
+            draw_clipped_text(screen, self.font, label, self.theme.text, pygame.Rect(lx - 38, ly - self.font.get_height() // 2, 76, self.font.get_height()), align="center");
+        mapped = [];
+        for index, value in enumerate(values):
+            fraction = max(0.0, min(1.0, (float(value) - minimum) / (maximum - minimum)));
+            angle = axes[index][2];
+            mapped.append((center[0] + int(math.cos(angle) * radius * fraction), center[1] + int(math.sin(angle) * radius * fraction)));
+        color = self.theme.palette[0] if self.theme.palette else self.theme.cursor;
+        pygame.draw.polygon(screen, color, mapped, 3);
+        for point in mapped:
+            pygame.draw.circle(screen, color, point, 4);
+
     def _draw_line_or_scatter(self, screen):
         chart = self.data_rect();
         min_x, max_x, min_y, max_y = self._bounds();
-        self.draw_axes(screen, chart, min_x, max_x, min_y, max_y, x_ticks=3, y_ticks=3);
+        category_axis = self.spec.kind == "line" and bool(self.spec.categories);
+        self.draw_axes(screen, chart, min_x, max_x, min_y, max_y, x_ticks=0 if category_axis else 3, y_ticks=3);
+        if category_axis:
+            count = len(self.spec.categories);
+            for index, label in enumerate(self.spec.categories):
+                fraction = index / max(1, count - 1);
+                x = chart.x + int(fraction * chart.width);
+                draw_clipped_text(screen, self.font, str(label), self.theme.muted, pygame.Rect(x - 40, chart.bottom + 4, 80, self.font.get_height()), align="center");
         for series_index, series in enumerate(self.spec.series):
             color = self.theme.palette[series_index % len(self.theme.palette)] if self.theme.palette else self.theme.cursor;
             mapped = [self.map_point(chart, x, y, min_x, max_x, min_y, max_y) for x, y in series.points];
@@ -221,6 +305,27 @@ class ChartView(ChartBase):
             start += angle;
         pygame.draw.circle(screen, self.theme.line, center, radius, 2);
 
+    def _draw_legend(self, screen):
+        if not self.spec.legend:
+            return;
+        labels = [];
+        if self.spec.kind == "pie" and self.spec.categories:
+            labels = [(str(label), index) for index, label in enumerate(self.spec.categories)];
+        else:
+            labels = [(series.name, index) for index, series in enumerate(self.spec.series) if series.name];
+        if not labels:
+            return;
+        x = self.rect.right - 8;
+        y = self.rect.y + 6;
+        for label, index in reversed(labels[:6]):
+            text_width = self.font.size(label)[0] if self.font is not None else len(label) * 8;
+            width = min(self.rect.width // 2, text_width + 20);
+            x -= width;
+            color = self.theme.palette[index % len(self.theme.palette)] if self.theme.palette else self.theme.button;
+            pygame.draw.rect(screen, color, pygame.Rect(x, y + 3, 10, 10));
+            draw_clipped_text(screen, self.font, label, self.theme.text, pygame.Rect(x + 14, y, max(1, width - 14), self.font.get_height()));
+            x -= 8;
+
     def draw(self, screen):
         self.draw_frame(screen);
         def draw_inside():
@@ -230,7 +335,10 @@ class ChartView(ChartBase):
                 self._draw_line_or_scatter(screen);
             elif self.spec.kind == "pie":
                 self._draw_pie(screen);
+            elif self.spec.kind == "radar":
+                self._draw_radar(screen);
         with_clip(screen, self.rect.inflate(-4, -4), draw_inside);
+        self._draw_legend(screen);
 
 
 class BarChart(ChartBase):

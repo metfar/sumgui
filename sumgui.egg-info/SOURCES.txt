@@ -19,6 +19,7 @@ examples/demo_first.py
 examples/demo_full.py
 examples/demo_market_dashboard.py
 examples/demo_quick_start.py
+examples/demo_report_dashboard.py
 examples/demo_shared_chart_spec.py
 examples/demo_sumgui_dzhanibekov_st.py
 examples/demo_textinput_keyrepeat.py
@@ -47,6 +48,7 @@ sumgui/graphics.py
 sumgui/keymap.py
 sumgui/keyrepeat.py
 sumgui/scale.py
+sumgui/tables.py
 sumgui/theme.py
 sumgui/voxel.py
 sumgui/widgets.py

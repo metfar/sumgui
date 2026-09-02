@@ -26,7 +26,7 @@
 # before the top-level package has forced pygame to load.
 import pygame;
 
-__version__ = "0.2.0a8";
+__version__ = "0.2.0a9";
 
 from .contracts import GUI_BACKEND, backend_capabilities;
 from .eventbridge import event_to_common, touch_to_mouse_event;
@@ -38,8 +38,9 @@ from .scale import Scale;
 from .keymap import KeyMap, default_voxel_keymap;
 from .widgets import Button, CalendarView, CanvasArea, ColorPicker, DateTimeView, EditorView, GridCell, GridWidget, Label, PaletteWidget, Panel, Slider, StatusBar, TextArea, TextInput, TerminalArea, TimeView, ToolBar, Widget;
 from .easy import EasyApp;
-from sumui import AxisSpec, BackendCapabilities, ChartSeries, ChartSpec, DialogSpec, FieldSpec, GraphicsCommand, GraphicsMode, GraphicsProgram, InputSpec, UIEvent, modern_mode, spectrum_mode;
+from sumui import AxisSpec, BackendCapabilities, ChartSeries, ChartSpec, DialogSpec, FieldSpec, GraphicsCommand, GraphicsMode, GraphicsProgram, ImageSpec, InputSpec, TableSpec, UIEvent, basic_mode, modern_mode, spectrum_mode;
 from .charts import BarChart, ChartView, LineChart, PieChart, ScatterChart;
+from .tables import TableView;
 from .dialogs import input_box, message_box, question_box;
 from .clipboard import get_clipboard_text, set_clipboard_text;
 from .commands import command_help, command_list;

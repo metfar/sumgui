@@ -66,3 +66,13 @@ class SharedChartContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main();
+
+
+def test_chartview_accepts_radar_and_horizontal_bar_specs():
+    module = load_charts_module();
+    radar = ChartSpec.radar(["A", "B", "C"], [1, 2, 3], title="Radar");
+    view = module.ChartView(None, radar, None);
+    assert view.spec.kind == "radar";
+    hbar = ChartSpec.bar(["A", "B"], [1, 2], orientation="horizontal");
+    view.set_spec(hbar);
+    assert view.spec.option("orientation") == "horizontal";

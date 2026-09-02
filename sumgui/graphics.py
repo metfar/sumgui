@@ -24,10 +24,18 @@ import time;
 
 import pygame;
 
-from sumui import ColorSpec, GraphicsCommand, GraphicsMode, GraphicsProgram, modern_mode;
+from sumui import ChartSpec, ColorSpec, GraphicsCommand, GraphicsMode, GraphicsProgram, ImageSpec, TableSpec, modern_mode;
 
 from .display import fit_window_size;
 
+
+
+BASIC16_PALETTE = (
+    (0, 0, 0), (0, 0, 170), (0, 170, 0), (0, 170, 170),
+    (170, 0, 0), (170, 0, 170), (170, 85, 0), (170, 170, 170),
+    (85, 85, 85), (85, 85, 255), (85, 255, 85), (85, 255, 255),
+    (255, 85, 85), (255, 85, 255), (255, 255, 85), (255, 255, 255),
+);
 
 SPECTRUM_PALETTE = (
     (0, 0, 0), (0, 0, 205), (205, 0, 0), (205, 0, 205),
@@ -94,6 +102,8 @@ class GraphicsSurface:
     def _profile_color(self, value, default=(255, 255, 255)):
         if self.mode.profile == "spectrum" and isinstance(value, int):
             return _spectrum_color(value, self.bright if hasattr(self, "bright") else False);
+        if self.mode.profile in ("basic", "qbasic", "gwbasic") and isinstance(value, int) and 0 <= value < len(BASIC16_PALETTE):
+            return BASIC16_PALETTE[int(value)];
         return _rgb(value, default);
 
     def clear(self, color=None):
@@ -135,6 +145,105 @@ class GraphicsSurface:
     def blit(self, image, x=0, y=0):
         target = image.surface if isinstance(image, GraphicsSurface) else image;
         self.surface.blit(target, (int(round(x)), int(round(y))));
+        return self;
+
+    def _surface_from_image(self, image):
+        if isinstance(image, GraphicsSurface):
+            return image.surface;
+        if isinstance(image, ImageSpec):
+            mode = "RGBA" if image.pixel_format in ("rgba", "rgba32", "argb32") else "RGB";
+            return pygame.image.fromstring(image.pixels, image.size, mode);
+        return image;
+
+    def capture(self, x=0, y=0, width=None, height=None):
+        x = int(round(x)); y = int(round(y));
+        width = self.width - x if width is None else int(round(width));
+        height = self.height - y if height is None else int(round(height));
+        rect = pygame.Rect(x, y, max(0, width), max(0, height)).clip(self.surface.get_rect());
+        if rect.width <= 0 or rect.height <= 0:
+            raise ValueError("capture region is outside the graphics surface");
+        region = self.surface.subsurface(rect).copy();
+        pixels = pygame.image.tostring(region, "RGBA");
+        return ImageSpec(rect.width, rect.height, pixels, "rgba32", (("source_x", rect.x), ("source_y", rect.y)));
+
+    def put(self, x, y, image):
+        target = self._surface_from_image(image);
+        if target is None:
+            raise ValueError("PUT requires an image");
+        self.surface.blit(target, (int(round(x)), int(round(y))));
+        return self;
+
+    def paint(self, x, y, color=None, border=None):
+        x = int(round(x)); y = int(round(y));
+        if not (0 <= x < self.width and 0 <= y < self.height):
+            return self;
+        fill_color = tuple(self._profile_color(self.foreground if color is None else color))[:4];
+        target_color = tuple(self.surface.get_at((x, y)));
+        border_color = None if border is None else tuple(self._profile_color(border))[:4];
+        if border_color is None and target_color[:len(fill_color)] == fill_color[:len(target_color)]:
+            return self;
+        pending = [(x, y)];
+        visited = set();
+        while pending:
+            px, py = pending.pop();
+            if (px, py) in visited or px < 0 or py < 0 or px >= self.width or py >= self.height:
+                continue;
+            visited.add((px, py));
+            current = tuple(self.surface.get_at((px, py)));
+            if border_color is not None:
+                if current[:3] == border_color[:3] or current[:3] == fill_color[:3]:
+                    continue;
+            elif current != target_color:
+                continue;
+            self.surface.set_at((px, py), fill_color);
+            pending.append((px + 1, py));
+            pending.append((px - 1, py));
+            pending.append((px, py + 1));
+            pending.append((px, py - 1));
+        return self;
+
+    def set_color(self, foreground=None, background=None, border=None):
+        if foreground is not None:
+            self.set_ink(foreground);
+        if background is not None:
+            self.set_paper(background);
+        if border is not None:
+            self.set_border(border);
+        return self;
+
+    def save_image(self, filename, image=None):
+        target = self.surface if image is None else self._surface_from_image(image);
+        pygame.image.save(target, str(filename));
+        return str(filename);
+
+    @staticmethod
+    def load_image(filename):
+        loaded = pygame.image.load(str(filename));
+        if pygame.display.get_init() and pygame.display.get_surface() is not None:
+            loaded = loaded.convert_alpha();
+        pixels = pygame.image.tostring(loaded, "RGBA");
+        return ImageSpec(loaded.get_width(), loaded.get_height(), pixels, "rgba32", (("filename", str(filename)),));
+
+    def draw_chart(self, x, y, width, height, spec, theme=None):
+        from .charts import ChartView;
+        from .theme import DEFAULT_THEME;
+        if not pygame.font.get_init():
+            pygame.font.init();
+        chart_spec = spec if isinstance(spec, ChartSpec) else ChartSpec.from_dict(spec);
+        font_size = max(9, min(18, int(height) // 14 if int(height) > 0 else 12));
+        font = pygame.font.SysFont((theme or DEFAULT_THEME).font_name, font_size);
+        ChartView(pygame.Rect(int(x), int(y), max(1, int(width)), max(1, int(height))), chart_spec, font, theme=theme or DEFAULT_THEME).draw(self.surface);
+        return self;
+
+    def draw_table(self, x, y, width, height, spec, theme=None):
+        from .tables import TableView;
+        from .theme import DEFAULT_THEME;
+        if not pygame.font.get_init():
+            pygame.font.init();
+        table_spec = spec if isinstance(spec, TableSpec) else TableSpec.from_dict(spec);
+        font_size = max(9, min(18, int(height) // max(8, len(table_spec.rows) + 3)));
+        font = pygame.font.SysFont((theme or DEFAULT_THEME).font_name, font_size);
+        TableView(pygame.Rect(int(x), int(y), max(1, int(width)), max(1, int(height))), table_spec, font, theme=theme or DEFAULT_THEME).draw(self.surface);
         return self;
 
     def set_ink(self, value):
@@ -179,6 +288,16 @@ class GraphicsSurface:
             return self.circle(args[0], args[1], args[2], options.get("color"), options.get("width", 1), options.get("fill", False));
         if op in ("text", "draw_text"):
             return self.text(args[0], args[1], args[2], options.get("color"), size=options.get("size", 16), font_name=options.get("font_name", "monospace"));
+        if op in ("paint", "fill"):
+            return self.paint(args[0], args[1], options.get("color", args[2] if len(args) > 2 else None), options.get("border", args[3] if len(args) > 3 else None));
+        if op == "color":
+            return self.set_color(args[0] if len(args) > 0 else None, args[1] if len(args) > 1 else None, args[2] if len(args) > 2 else None);
+        if op in ("put", "blit_image"):
+            return self.put(args[0], args[1], args[2]);
+        if op == "chart":
+            return self.draw_chart(args[0], args[1], args[2], args[3], args[4], theme=options.get("theme"));
+        if op == "table":
+            return self.draw_table(args[0], args[1], args[2], args[3], args[4], theme=options.get("theme"));
         if op == "ink":
             return self.set_ink(args[0]);
         if op == "paper":
@@ -296,6 +415,16 @@ class GraphicsWindow:
             self.close();
             return command;
         self._ensure_open();
+        if command.operation == "capture":
+            args = tuple(command.arguments);
+            return self.surface.capture(*(args or (0, 0, self.surface.width, self.surface.height)));
+        if command.operation == "save_image":
+            args = tuple(command.arguments);
+            filename = args[0];
+            image = args[1] if len(args) > 1 else None;
+            return self.surface.save_image(filename, image=image);
+        if command.operation == "load_image":
+            return self.surface.load_image(command.arguments[0]);
         self.surface.execute(command);
         self.poll();
         if not self.closed:

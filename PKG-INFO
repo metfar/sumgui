@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: sumgui
-Version: 0.2.0a8
+Version: 0.2.0a9
 Summary: A tiny retro-flavored GUI toolkit for Pygame.
 Author: William Martinez Bas
 Author-email: William Martinez Bas <metfar@gmail.com>
@@ -13,7 +13,7 @@ Classifier: Topic :: Software Development :: User Interfaces
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: sumui>=0.1.0a6
+Requires-Dist: sumui>=0.1.0a7
 Requires-Dist: pygame>=2.0
 Dynamic: author
 Dynamic: license-file
@@ -369,5 +369,15 @@ application -> Sum application model -> sumTUI terminal presentation
 The graphical backend translates keyboard, mouse, wheel, drag, resize and touch to the application's existing Sum events. It currently renders the shared Rich/widget tree as styled graphical character cells; this immediately provides functional parity while native pixel renderers are introduced progressively. Native widgets such as `EditorView` are the next rendering layer, not alternate application logic.
 
 The graphical presentation uses the active Sum theme by default, including the established DOS/retro and modern schemes. Backend-specific graphical themes may be added later without changing application behavior.
+
+
+
+## Portable images, reports and PNG export
+
+`sumui.ImageSpec`, `TableSpec` and `ChartSpec` are backend-neutral values. SumGUI can capture and restore regions, flood-fill, embed charts/tables into a logical `GraphicsSurface`, and save the resulting surface as PNG/BMP through Pygame.
+
+`examples/demo_report_dashboard.py` demonstrates a table plus line, vertical bar, horizontal bar, pie and radar charts on one surface and writes `sumgui_report_dashboard.png`.
+
+Graphical presentations of Sum applications also provide a common **File → Export graphical window as PNG...** action through the shared application model. This applies to `sumedit --gui`, `sumide --gui`, `sumx --gui` and language IDEs derived from the same application.
 
 <p align=center><b>- oOo -<b></p>

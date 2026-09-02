@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0a9 - 2026-09-02
+- Added the BASIC-compatible 16-color palette for arbitrary BASIC graphics modes while retaining Spectrum palette semantics for Spectrum profiles.
+- `GraphicsSurface` now captures/restores image regions, flood-fills (`PAINT`/`FILL`), saves/loads images, and consumes shared image/table/chart commands.
+- Added `TableView`, horizontal bar and radar rendering, chart labels/legends, and `examples/demo_report_dashboard.py`.
+- Graphical application windows can export their current rendered image as PNG.
+- UDG Painter Reborn remains part of the package.
+
 ## 0.2.0a8 - 2026-09-02
 - ZX is now the native GUI default theme and the default for sumgdialog and graphical demos.
 - Removed the retired third-party-derived colour scheme from the built-in GUI theme registry.

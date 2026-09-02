@@ -131,6 +131,13 @@ class GraphicalApplicationBackend:
         self._redraw_requested = True;
         return True;
 
+    def save_png(self, filename):
+        if self.screen is None:
+            raise RuntimeError("graphical application window is not active");
+        self._draw();
+        self.pygame.image.save(self.screen, str(filename));
+        return str(filename);
+
     def _make_fonts(self):
         pygame = self.pygame;
         self.fonts = {

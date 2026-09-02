@@ -349,4 +349,14 @@ The graphical backend translates keyboard, mouse, wheel, drag, resize and touch 
 
 The graphical presentation uses the active Sum theme by default, including the established DOS/retro and modern schemes. Backend-specific graphical themes may be added later without changing application behavior.
 
+
+
+## Portable images, reports and PNG export
+
+`sumui.ImageSpec`, `TableSpec` and `ChartSpec` are backend-neutral values. SumGUI can capture and restore regions, flood-fill, embed charts/tables into a logical `GraphicsSurface`, and save the resulting surface as PNG/BMP through Pygame.
+
+`examples/demo_report_dashboard.py` demonstrates a table plus line, vertical bar, horizontal bar, pie and radar charts on one surface and writes `sumgui_report_dashboard.png`.
+
+Graphical presentations of Sum applications also provide a common **File → Export graphical window as PNG...** action through the shared application model. This applies to `sumedit --gui`, `sumide --gui`, `sumx --gui` and language IDEs derived from the same application.
+
 <p align=center><b>- oOo -<b></p>
