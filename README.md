@@ -108,7 +108,7 @@ python examples/demo_themes.py
 ## Included in this alpha
 
 - Application/easy API
-- Themes: ZX, DOS, C64, MSX, Dark, Light
+- Themes: ZX, DOS, XBASE, C64, Dark, Light
 - Button, Label, TextArea, Slider, ToolBar, StatusBar
 - GridWidget with colour, text or image per cell
 - PaletteWidget and ColorPicker

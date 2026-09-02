@@ -300,8 +300,9 @@ class GraphicalApplicationBackend:
             width = self.initial_columns * self.cell_width;
             height = self.initial_rows * self.cell_height;
             try:
-                from .display import fit_window_size;
+                from .display import fit_window_size, set_default_icon;
                 width, height = fit_window_size(width, height);
+                set_default_icon();
             except Exception:
                 pass;
             self.screen = pygame.display.set_mode((int(width), int(height)), pygame.RESIZABLE);

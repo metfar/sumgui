@@ -71,3 +71,26 @@ def display_size(width, height, fit=True, margin_x=32, margin_y=64):
     if not fit:
         return max(1, int(width)), max(1, int(height));
     return fit_window_size(width, height, margin_x=margin_x, margin_y=margin_y);
+
+
+def sigma_icon(size=64, foreground=(255, 255, 255), background=(0, 0, 0)):
+    """Create the Sum ecosystem's own default Σ application icon.""";
+    size = max(16, int(size));
+    if not pygame.font.get_init():
+        pygame.font.init();
+    surface = pygame.Surface((size, size), pygame.SRCALPHA);
+    surface.fill(tuple(background));
+    font = pygame.font.Font(None, max(16, int(size * 0.9)));
+    glyph = font.render("Σ", True, tuple(foreground));
+    rect = glyph.get_rect(center=(size // 2, size // 2));
+    surface.blit(glyph, rect);
+    return surface;
+
+
+def set_default_icon():
+    """Install the GPL-safe, project-owned Σ icon on the active display.""";
+    try:
+        pygame.display.set_icon(sigma_icon());
+        return True;
+    except pygame.error:
+        return False;

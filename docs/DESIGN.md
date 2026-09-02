@@ -24,7 +24,6 @@ Built-in themes:
 - ZX
 - DOS
 - C64
-- MSX
 - Dark
 - Light
 

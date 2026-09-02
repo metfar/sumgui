@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: sumgui
-Version: 0.2.0a7
+Version: 0.2.0a8
 Summary: A tiny retro-flavored GUI toolkit for Pygame.
 Author: William Martinez Bas
 Author-email: William Martinez Bas <metfar@gmail.com>
@@ -13,7 +13,7 @@ Classifier: Topic :: Software Development :: User Interfaces
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: sumui>=0.1.0a5
+Requires-Dist: sumui>=0.1.0a6
 Requires-Dist: pygame>=2.0
 Dynamic: author
 Dynamic: license-file
@@ -129,7 +129,7 @@ python examples/demo_themes.py
 ## Included in this alpha
 
 - Application/easy API
-- Themes: ZX, DOS, C64, MSX, Dark, Light
+- Themes: ZX, DOS, XBASE, C64, Dark, Light
 - Button, Label, TextArea, Slider, ToolBar, StatusBar
 - GridWidget with colour, text or image per cell
 - PaletteWidget and ColorPicker

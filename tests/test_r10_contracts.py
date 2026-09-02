@@ -274,9 +274,33 @@ def test_gui_themes_include_tui_baseline_schemes_without_pygame():
     module = importlib.util.module_from_spec(spec);
     sys.modules["sumgui.theme"] = module;
     spec.loader.exec_module(module);
-    for name in ("ZX", "DOS", "RAR", "DBASE", "FOXPRO", "XBASE", "C64", "MSX", "Dark", "Light"):
+    for name in ("ZX", "DOS", "XBASE", "C64", "Dark", "Light"):
         assert name in module.THEMES;
         theme = module.make_theme(name);
         assert isinstance(theme.role_color("syntax_keyword"), tuple);
         assert len(theme.role_color("syntax_keyword")) == 3;
     assert module.DEFAULT_THEME.name == "ZX";
+
+
+def test_retired_third_party_theme_names_are_not_builtins():
+    import os;
+    os.environ.setdefault("SDL_VIDEODRIVER", "dummy");
+    from sumgui.theme import THEMES, make_theme;
+    assert set(("ZX", "DOS", "XBASE", "C64", "Dark", "Light")).issubset(THEMES);
+    for retired in ("RAR", "DBASE", "FOXPRO", "MSX"):
+        assert retired not in THEMES;
+        assert make_theme(retired).name == "ZX";
+
+
+def test_demo_full_canvas_uses_geometry_api_not_rect_draw_command():
+    source = (Path(__file__).resolve().parents[1] / "examples" / "demo_full.py").read_text(encoding="utf-8");
+    assert "canvas.get_rect().collidepoint(event.pos)" in source;
+    assert "canvas.get_rect().inflate(-8, -8)" in source;
+
+
+def test_datetime_component_demo_is_packaged_in_source_tree():
+    path = Path(__file__).resolve().parents[1] / "examples" / "components" / "demo_datetime.py";
+    assert path.exists();
+    text = path.read_text(encoding="utf-8");
+    assert "CalendarView" in text and "TimeView" in text and "DateTimeView" in text;
+    assert "Σ" in text;

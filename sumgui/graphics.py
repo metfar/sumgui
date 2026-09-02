@@ -265,6 +265,11 @@ class GraphicsWindow:
             pygame.init();
         elif not pygame.display.get_init():
             pygame.display.init();
+        try:
+            from .display import set_default_icon;
+            set_default_icon();
+        except (ImportError, AttributeError):
+            pass;
         self.mode = mode if isinstance(mode, GraphicsMode) else GraphicsMode.from_dict(mode);
         self.surface = GraphicsSurface(self.mode);
         requested = self._desired_size(self.mode);

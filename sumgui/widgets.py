@@ -22,7 +22,7 @@
 #
 
 import pygame;
-from .theme import C64_COLORS, DEFAULT_THEME, DOS_COLORS, MSX_COLORS, SPECTRUM_COLORS;
+from .theme import C64_COLORS, DEFAULT_THEME, DOS_COLORS, SPECTRUM_COLORS;
 from .clipboard import get_clipboard_text, set_clipboard_text;
 
 
@@ -2594,6 +2594,11 @@ class CanvasArea(Widget):
     def get_rect(self):
         return self._widget_rect;
 
+    @property
+    def bounds(self):
+        """Physical widget bounds; ``rect()`` remains the canvas drawing command.""";
+        return self._widget_rect;
+
     def local_pos(self, pos):
         return (pos[0] - self._widget_rect.x, pos[1] - self._widget_rect.y);
 
@@ -2985,3 +2990,142 @@ class TerminalArea(TextArea):
                 draw_clipped_text(screen, self.font, visible, self.color_for_line(row), pygame.Rect(text_rect.x, y, text_rect.width, line_h));
         with_clip(screen, text_rect, draw_inside);
         self.draw_scrollbar(screen);
+
+
+class CalendarView(Widget):
+    """Backend-native calendar renderer backed by ``sumui.CalendarModel``.""";
+    def __init__(self, rect, font, value=None, on_change=None, theme=None, first_weekday=0, tab_index=0):
+        from sumui import CalendarModel;
+        from datetime import date;
+        super().__init__(rect, focusable=True, tab_index=tab_index);
+        self.font = font;
+        self.theme = theme or DEFAULT_THEME;
+        self.model = CalendarModel(value or date.today(), first_weekday=first_weekday);
+        self.on_change = on_change;
+
+    @property
+    def value(self):
+        return self.model.value;
+
+    def _changed(self):
+        if self.on_change is not None:
+            self.on_change(self, self.value);
+        return True;
+
+    def handle_event(self, event):
+        if event.type == pygame.KEYDOWN and self.has_focus:
+            if event.key == pygame.K_LEFT: self.model.move_days(-1); return self._changed();
+            if event.key == pygame.K_RIGHT: self.model.move_days(1); return self._changed();
+            if event.key == pygame.K_UP: self.model.move_days(-7); return self._changed();
+            if event.key == pygame.K_DOWN: self.model.move_days(7); return self._changed();
+            if event.key == pygame.K_PAGEUP: self.model.move_months(-1); return self._changed();
+            if event.key == pygame.K_PAGEDOWN: self.model.move_months(1); return self._changed();
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.rect.collidepoint(event.pos):
+            header_h = self.font.get_height() * 2 + 12;
+            row_h = max(18, (self.rect.height - header_h - 8) // max(1, len(self.model.month_matrix())));
+            col_w = max(1, (self.rect.width - 12) // 7);
+            col = (event.pos[0] - self.rect.x - 6) // col_w;
+            row = (event.pos[1] - self.rect.y - header_h) // row_h;
+            weeks = self.model.month_matrix();
+            if 0 <= row < len(weeks) and 0 <= col < 7:
+                self.model.set_value(weeks[int(row)][int(col)]);
+                return self._changed();
+            return True;
+        return False;
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, self.theme.panel, self.rect, border_radius=8);
+        pygame.draw.rect(screen, self.theme.cursor if self.has_focus else self.theme.line, self.rect, 3 if self.has_focus else 2, border_radius=8);
+        header = pygame.Rect(self.rect.x + 6, self.rect.y + 4, self.rect.width - 12, self.font.get_height());
+        draw_clipped_text(screen, self.font, self.model.month_title, self.theme.title, header, align="center");
+        weekdays = ("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su");
+        y0 = header.bottom + 4;
+        col_w = max(1, (self.rect.width - 12) // 7);
+        for col, text in enumerate(weekdays):
+            draw_clipped_text(screen, self.font, text, self.theme.muted, pygame.Rect(self.rect.x + 6 + col * col_w, y0, col_w, self.font.get_height()), align="center");
+        weeks = self.model.month_matrix();
+        body_y = y0 + self.font.get_height() + 4;
+        row_h = max(18, (self.rect.bottom - body_y - 6) // max(1, len(weeks)));
+        for row, week in enumerate(weeks):
+            for col, day in enumerate(week):
+                cell = pygame.Rect(self.rect.x + 6 + col * col_w, body_y + row * row_h, col_w, row_h);
+                if day == self.value:
+                    pygame.draw.rect(screen, self.theme.selection_bg, cell.inflate(-2, -2), border_radius=4);
+                    color = self.theme.selection_text;
+                elif day.month != self.value.month:
+                    color = self.theme.muted;
+                else:
+                    color = self.theme.text;
+                draw_clipped_text(screen, self.font, str(day.day), color, cell, align="center", valign="middle");
+
+
+class TimeView(Widget):
+    def __init__(self, rect, font, value=None, on_change=None, seconds=True, use_24h=True, live=False, theme=None, tab_index=0):
+        from sumui import TimeModel;
+        super().__init__(rect, focusable=True, tab_index=tab_index);
+        self.font = font;
+        self.theme = theme or DEFAULT_THEME;
+        self.model = TimeModel(value, seconds=seconds, use_24h=use_24h);
+        self.on_change = on_change;
+        self.live = bool(live);
+
+    @property
+    def value(self):
+        if self.live:
+            from datetime import datetime;
+            return datetime.now().time().replace(microsecond=0);
+        return self.model.value;
+
+    def handle_event(self, event):
+        if self.live or event.type != pygame.KEYDOWN or not self.has_focus:
+            return False;
+        delta = 0;
+        if event.key == pygame.K_UP: delta = 60;
+        elif event.key == pygame.K_DOWN: delta = -60;
+        elif event.key == pygame.K_RIGHT: delta = 1;
+        elif event.key == pygame.K_LEFT: delta = -1;
+        if not delta: return False;
+        self.model.move_seconds(delta);
+        if self.on_change is not None: self.on_change(self, self.model.value);
+        return True;
+
+    def draw(self, screen):
+        if self.live: self.model.set_value(self.value);
+        pygame.draw.rect(screen, self.theme.panel, self.rect, border_radius=8);
+        pygame.draw.rect(screen, self.theme.cursor if self.has_focus else self.theme.line, self.rect, 3 if self.has_focus else 2, border_radius=8);
+        draw_clipped_text(screen, self.font, self.model.formatted(), self.theme.text, self.rect.inflate(-8, -4), align="center", valign="middle");
+
+
+class DateTimeView(Widget):
+    def __init__(self, rect, font, value=None, on_change=None, seconds=True, use_24h=True, live=False, theme=None, tab_index=0):
+        from sumui import DateTimeModel;
+        super().__init__(rect, focusable=True, tab_index=tab_index);
+        self.font = font;
+        self.theme = theme or DEFAULT_THEME;
+        self.model = DateTimeModel(value, seconds=seconds, use_24h=use_24h);
+        self.on_change = on_change;
+        self.live = bool(live);
+
+    @property
+    def value(self):
+        if self.live:
+            from datetime import datetime;
+            return datetime.now().replace(microsecond=0);
+        return self.model.value;
+
+    def handle_event(self, event):
+        if self.live or event.type != pygame.KEYDOWN or not self.has_focus:
+            return False;
+        changed = False;
+        if event.key == pygame.K_UP: self.model.move_days(1); changed = True;
+        elif event.key == pygame.K_DOWN: self.model.move_days(-1); changed = True;
+        elif event.key == pygame.K_RIGHT: self.model.move_seconds(60); changed = True;
+        elif event.key == pygame.K_LEFT: self.model.move_seconds(-60); changed = True;
+        if changed and self.on_change is not None: self.on_change(self, self.model.value);
+        return changed;
+
+    def draw(self, screen):
+        if self.live: self.model.set_value(self.value);
+        pygame.draw.rect(screen, self.theme.panel, self.rect, border_radius=8);
+        pygame.draw.rect(screen, self.theme.cursor if self.has_focus else self.theme.line, self.rect, 3 if self.has_focus else 2, border_radius=8);
+        draw_clipped_text(screen, self.font, self.model.formatted(), self.theme.text, self.rect.inflate(-8, -4), align="center", valign="middle");

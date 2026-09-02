@@ -26,7 +26,7 @@ from setuptools import find_packages, setup;
 
 setup(
     name="sumgui",
-    version="0.2.0a7",
+    version="0.2.0a8",
     description="A tiny retro-flavored GUI toolkit for Pygame.",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",

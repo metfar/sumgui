@@ -17,7 +17,7 @@ import pygame;
 
 from .. import __version__;
 from ..dialogs import _dialog_events, input_box, message_box, question_box;
-from ..display import fit_window_size;
+from ..display import fit_window_size, set_default_icon;
 from ..widgets import Button, Panel, draw_clipped_text;
 from ..theme import make_theme;
 
@@ -140,6 +140,7 @@ def _run_demo(screen, clock, theme):
 def main(argv=None):
     args = build_parser().parse_args(argv);
     pygame.init();
+    set_default_icon();
     width, height = fit_window_size(max(320, args.width), max(240, args.height));
     screen = pygame.display.set_mode((width, height));
     pygame.display.set_caption(args.title);

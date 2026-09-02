@@ -22,6 +22,7 @@
 #
 
 import pygame;
+from .display import set_default_icon;
 
 from .charts import ChartView;
 from .graphics import GraphicsSurface;
@@ -176,6 +177,7 @@ class AlertBox(Widget):
 class EasyApp:
     def __init__(self, title="SumGUI", width=720, height=720, font_name="monospace", font_size=18, font_scale=1.0, theme=None, base_width=720, base_height=720, scale_mode="fit", fullscreen=False, fit_display=True):
         pygame.init();
+        set_default_icon();
         self.title = title;
         self.requested_width = int(width);
         self.requested_height = int(height);

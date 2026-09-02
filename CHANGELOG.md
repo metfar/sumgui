@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0a7 - 2026-09-02
+## 0.2.0a8 - 2026-09-02
 - ZX is now the native GUI default theme and the default for sumgdialog and graphical demos.
 - Removed the retired third-party-derived colour scheme from the built-in GUI theme registry.
 - Unknown theme names fall back to ZX so legacy saved configurations remain launchable.

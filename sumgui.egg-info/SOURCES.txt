@@ -27,6 +27,7 @@ examples/components/demo_all.py
 examples/components/demo_button.py
 examples/components/demo_canvas.py
 examples/components/demo_chart.py
+examples/components/demo_datetime.py
 examples/components/demo_label.py
 examples/components/demo_slider.py
 examples/components/demo_terminal.py
