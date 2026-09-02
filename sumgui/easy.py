@@ -23,14 +23,23 @@
 
 import pygame;
 
+from .charts import ChartView;
+from .graphics import GraphicsSurface;
+from sumui import modern_mode;
 from .dialogs import input_box, message_box;
 from .keyrepeat import enable_key_repeat, get_events;
+from .eventbridge import is_focus_loss, touch_to_mouse_event;
 from .scale import Scale;
 from .theme import DEFAULT_THEME, make_theme;
 from .commands import command_help, command_list;
 from .widgets import Button, CanvasArea, Label, Panel, Slider, TextArea, TextInput, TerminalArea, Widget, draw_clipped_text;
 
 _app = None;
+
+
+def graphics(width=640, height=480, mode=None, scaling="fit", background=(0, 0, 0, 255)):
+    resolved = mode if mode is not None else modern_mode(width, height, scaling=scaling);
+    return GraphicsSurface(resolved, background=background);
 
 
 def _alpha_value(value, default=255):
@@ -239,7 +248,21 @@ class EasyApp:
         while self.running:
             dt = self.clock.tick(60);
             for event in get_events():
+                if is_focus_loss(event):
+                    self.panel.cancel_pointer_capture();
+                    if self.modal is not None:
+                        cancel = getattr(self.modal, "cancel_pointer", None);
+                        if cancel is not None:
+                            cancel();
+                    continue;
+                if event.type in (getattr(pygame, "FINGERDOWN", -101), getattr(pygame, "FINGERMOTION", -102), getattr(pygame, "FINGERUP", -103)):
+                    event = touch_to_mouse_event(event, self.screen.get_size());
+                elif event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION) and getattr(event, "touch", False):
+                    # Pygame may synthesize a mouse event for the same native
+                    # touch event.  Native FINGER events are our source of truth.
+                    continue;
                 if event.type == pygame.QUIT:
+                    self.panel.cancel_pointer_capture();
                     self.running = False;
                 elif self.modal is not None:
                     self.modal.handle_event(event);
@@ -305,14 +328,32 @@ def button(text, x, y, w=160, h=50, do=None, font_size=None, bold=True):
     return current.add(Button(current.rect(x, y, w, h), text, use_font, callback, current.theme));
 
 
-def inputline(x, y, w, h, text="", placeholder="", font_size=None, max_length=-1, show_h_scrollbar=False):
+def inputline(x, y, w, h, text="", placeholder="", font_size=None, max_length=-1, show_h_scrollbar=False,
+              confirm_at_limit=True, validator=None, validation_error="Invalid value", on_validation_error=None,
+              on_submit=None, valid_values=(), case_sensitive=False, char_filter=None, clear_on_first_edit=False, spec=None):
     current = app();
+    if spec is not None:
+        from sumui import FieldSpec;
+        field = spec if isinstance(spec, FieldSpec) else FieldSpec.from_dict(spec);
+        text = str(field.default if field.default is not None else "");
+        placeholder = field.placeholder or placeholder;
+        max_length = -1 if field.max_length is None else field.max_length;
+        confirm_at_limit = field.confirm;
+        valid_values = field.valid_values;
+        case_sensitive = field.case_sensitive;
+        validation_error = field.validation_error;
     use_font = current.make_font(font_size or current.font_size);
-    return current.add(TextInput(current.rect(x, y, w, h), use_font, text=text, placeholder=placeholder, max_length=max_length, theme=current.theme, show_h_scrollbar=show_h_scrollbar));
+    return current.add(TextInput(
+        current.rect(x, y, w, h), use_font, text=text, placeholder=placeholder, max_length=max_length,
+        theme=current.theme, show_h_scrollbar=show_h_scrollbar, confirm_at_limit=confirm_at_limit,
+        validator=validator, validation_error=validation_error, on_validation_error=on_validation_error,
+        on_submit=on_submit, valid_values=valid_values, case_sensitive=case_sensitive, char_filter=char_filter,
+        clear_on_first_edit=clear_on_first_edit,
+    ));
 
 
-def textinput(x, y, w, h, text="", placeholder="", font_size=None, max_length=-1, show_h_scrollbar=False):
-    return inputline(x, y, w, h, text=text, placeholder=placeholder, font_size=font_size, max_length=max_length, show_h_scrollbar=show_h_scrollbar);
+def textinput(x, y, w, h, text="", placeholder="", font_size=None, max_length=-1, show_h_scrollbar=False, **kwargs):
+    return inputline(x, y, w, h, text=text, placeholder=placeholder, font_size=font_size, max_length=max_length, show_h_scrollbar=show_h_scrollbar, **kwargs);
 
 
 def textarea(x, y, w, h, text="", font_size=None, accepts_tab=True, tab_size=4, syntax=None, show_v_scrollbar=True, show_h_scrollbar=True):
@@ -324,6 +365,12 @@ def textarea(x, y, w, h, text="", font_size=None, accepts_tab=True, tab_size=4, 
 def canvas(x, y, w, h, interactive=True, auto_redraw=True, on_event=None, on_draw=None):
     current = app();
     return current.add(CanvasArea(current.rect(x, y, w, h), theme=current.theme, on_event=on_event, on_draw=on_draw, interactive=interactive, auto_redraw=auto_redraw));
+
+
+def chart(spec, x, y, w, h, font_size=None):
+    current = app();
+    use_font = current.make_font(font_size or current.font_size);
+    return current.add(ChartView(current.rect(x, y, w, h), spec, use_font, current.theme));
 
 
 

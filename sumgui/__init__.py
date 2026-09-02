@@ -26,15 +26,19 @@
 # before the top-level package has forced pygame to load.
 import pygame;
 
-__version__ = "0.0.1a28";
+__version__ = "0.2.0a2";
 
+from .contracts import GUI_BACKEND, backend_capabilities;
+from .eventbridge import event_to_common, touch_to_mouse_event;
+from .graphics import GraphicsSurface;
 from .theme import C64_COLORS, DEFAULT_THEME, DOS_COLORS, MSX_COLORS, SPECTRUM_COLORS, THEMES, Theme, make_theme;
 from .scale import Scale;
 from .keymap import KeyMap, default_voxel_keymap;
 from .widgets import Button, CanvasArea, ColorPicker, GridCell, GridWidget, Label, PaletteWidget, Panel, Slider, StatusBar, TextArea, TextInput, TerminalArea, ToolBar, Widget;
 from .easy import EasyApp;
-from .charts import BarChart, LineChart, PieChart, ScatterChart;
-from .dialogs import input_box, message_box;
+from sumui import AxisSpec, BackendCapabilities, ChartSeries, ChartSpec, DialogSpec, FieldSpec, GraphicsCommand, GraphicsMode, GraphicsProgram, InputSpec, UIEvent, modern_mode, spectrum_mode;
+from .charts import BarChart, ChartView, LineChart, PieChart, ScatterChart;
+from .dialogs import input_box, message_box, question_box;
 from .clipboard import get_clipboard_text, set_clipboard_text;
 from .commands import command_help, command_list;
 from .voxel import Voxel, VoxelFace, VoxelGridModel, VoxelGridWidgetSpec;

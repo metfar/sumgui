@@ -82,6 +82,15 @@ class Widget:
     def handle_event(self, event):
         return False;
 
+    def cancel_pointer(self):
+        # Backends must always release transient pointer state on focus loss
+        # or touch cancellation.  This is intentionally generic so legacy
+        # widgets that use pressed/dragging/mouse_down cannot stay latched.
+        for name in ("pressed", "dragging", "mouse_down", "ok_pressed"):
+            if hasattr(self, name):
+                setattr(self, name, False);
+        return True;
+
     def update(self, dt):
         return None;
 
@@ -464,6 +473,19 @@ class Panel(Widget):
             if widget.visible and widget.enabled and widget.get_rect().collidepoint(pos):
                 return widget;
         return None;
+
+    def cancel_pointer_capture(self):
+        widget = self.mouse_capture_widget;
+        self.mouse_capture_widget = None;
+        if widget is not None:
+            cancel = getattr(widget, "cancel_pointer", None);
+            if cancel is not None:
+                cancel();
+            else:
+                for name in ("pressed", "dragging", "mouse_down", "ok_pressed"):
+                    if hasattr(widget, name):
+                        setattr(widget, name, False);
+        return True;
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_TAB:
@@ -1857,7 +1879,11 @@ class TextArea(Widget):
 
 
 class TextInput(TextArea):
-    def __init__(self, rect, font, text="", placeholder="", editable=True, max_length=-1, theme=None, show_h_scrollbar=False, accepts_tab=False, tab_index=0):
+    def __init__(self, rect, font, text="", placeholder="", editable=True, max_length=-1, theme=None,
+                 show_h_scrollbar=False, accepts_tab=False, tab_index=0, confirm_at_limit=True,
+                 validator=None, validation_error="Invalid value", on_validation_error=None,
+                 on_submit=None, valid_values=(), case_sensitive=False, char_filter=None,
+                 clear_on_first_edit=False):
         super().__init__(
             rect,
             font,
@@ -1874,7 +1900,19 @@ class TextInput(TextArea):
             tab_index=tab_index,
         );
         self.placeholder = placeholder;
-        self.max_length = max_length;
+        self.max_length = int(max_length) if max_length is not None else -1;
+        self.confirm_at_limit = bool(confirm_at_limit);
+        self.validator = validator;
+        self.validation_error = str(validation_error or "Invalid value");
+        self.on_validation_error = on_validation_error;
+        self.on_submit = on_submit;
+        self.valid_values = tuple(str(item) for item in (valid_values or ()));
+        self.case_sensitive = bool(case_sensitive);
+        self.char_filter = char_filter;
+        self.clear_on_first_edit = bool(clear_on_first_edit);
+        self._first_edit_pending = bool(self.clear_on_first_edit and self.value());
+        self._validation_blocked_at_limit = False;
+        self.last_validation_message = "";
 
     def value(self):
         return self.lines[0] if self.lines else "";
@@ -1885,6 +1923,7 @@ class TextInput(TextArea):
             self.lines[0] = self.lines[0][:self.max_length];
         self.cursor_row = 0;
         self.cursor_col = len(self.lines[0]);
+        self._first_edit_pending = bool(self.clear_on_first_edit and self.lines[0]);
         self.clear_selection();
         self.ensure_visible();
 
@@ -1897,23 +1936,102 @@ class TextInput(TextArea):
     def newline(self):
         return None;
 
+    def _validation_result(self):
+        value = self.value();
+        if self.valid_values:
+            probe = value if self.case_sensitive else value.upper();
+            allowed = self.valid_values if self.case_sensitive else tuple(item.upper() for item in self.valid_values);
+            if probe not in allowed:
+                return False, self.validation_error;
+        if self.validator is None:
+            return True, "";
+        try:
+            result = self.validator(value);
+        except Exception as exc:
+            return False, str(exc) or self.validation_error;
+        if hasattr(result, "valid"):
+            return bool(result.valid), str(getattr(result, "message", "") or self.validation_error);
+        if isinstance(result, (tuple, list)) and result:
+            return bool(result[0]), str(result[1] if len(result) > 1 else self.validation_error);
+        return bool(result), "" if bool(result) else self.validation_error;
+
+    def validate(self):
+        valid, message = self._validation_result();
+        self.last_validation_message = "" if valid else str(message or self.validation_error);
+        if valid:
+            self._validation_blocked_at_limit = False;
+            return True;
+        self._validation_blocked_at_limit = True;
+        if self.on_validation_error is not None:
+            self.on_validation_error(self.value(), self.last_validation_message, self);
+        return False;
+
+    def submit(self):
+        if not self.validate():
+            return False;
+        if self.on_submit is not None:
+            self.on_submit(self.value());
+        return True;
+
     def insert_text(self, text):
         if not self.editable:
             return;
         text = str(text).replace("\r", "").replace("\n", "");
         if not text:
             return;
+        if self._first_edit_pending:
+            self.lines = [""];
+            self.cursor_row = 0;
+            self.cursor_col = 0;
+            self.clear_selection();
+            self._first_edit_pending = False;
         if self.has_selection():
             self.delete_selection();
-        for char in text:
+        for source_char in text:
             line = self.lines[0];
-            if self.max_length != -1 and len(line) >= self.max_length:
-                break;
-            self.lines[0] = line[:self.cursor_col] + char + line[self.cursor_col:];
-            self.cursor_col += 1;
+            limit = self.max_length;
+            full = bool(limit != -1 and len(line) >= limit);
+            if limit == 0:
+                continue;
+            target = self.cursor_col;
+            at_full_end = bool(full and self.cursor_col >= limit);
+            if at_full_end and (self.confirm_at_limit or self._validation_blocked_at_limit):
+                target = max(0, limit - 1);
+            transformed = source_char;
+            if self.char_filter is not None:
+                transformed = self.char_filter(target, source_char);
+            if transformed is None or transformed is False:
+                continue;
+            transformed = str(transformed);
+            if not transformed:
+                continue;
+            char = transformed[0];
+            if full:
+                if target < len(line):
+                    self.lines[0] = line[:target] + char + line[target + 1:];
+                    self.cursor_col = limit if at_full_end else min(limit, target + 1);
+                else:
+                    continue;
+            else:
+                self.lines[0] = line[:target] + char + line[target:];
+                if limit != -1:
+                    self.lines[0] = self.lines[0][:limit];
+                self.cursor_col = min(len(self.lines[0]), target + 1);
+            if limit != -1 and len(self.lines[0]) >= limit and not self.confirm_at_limit:
+                if self.validate():
+                    if self.on_submit is not None:
+                        self.on_submit(self.value());
+                else:
+                    self._validation_blocked_at_limit = True;
         self.cursor_row = 0;
         self.clear_selection();
         self.ensure_visible();
+
+    def handle_event(self, event):
+        if self.active and event.type == pygame.KEYDOWN and event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+            self.submit();
+            return True;
+        return super().handle_event(event);
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.theme.panel, self.rect, border_radius=8);
