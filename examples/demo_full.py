@@ -27,7 +27,6 @@ import os;
 import sys;
 
 import pygame;
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")));
 
 
@@ -38,6 +37,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."));
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT);
 
+from sumgui.display import fit_window_size;
 from sumgui import BarChart, Button, CanvasArea, DEFAULT_THEME, GridWidget, Label, LineChart, PaletteWidget, Panel, Scale, ScatterChart, Slider, StatusBar, TextArea, ToolBar, enable_key_repeat, get_events, message_box;
 
 HEIGHT = 720;
@@ -47,10 +47,11 @@ WIDTH = int(720 * (HEIGHT / 1280));
 def main():
     pygame.init();
     enable_key_repeat(250, 31);
-    screen = pygame.display.set_mode((WIDTH, HEIGHT));
+    screen = pygame.display.set_mode(fit_window_size(WIDTH, HEIGHT));
+    physical_width, physical_height = screen.get_size();
     pygame.display.set_caption("SumGUI Alpha Demo");
     clock = pygame.time.Clock();
-    scale = Scale(WIDTH, HEIGHT);
+    scale = Scale(physical_width, physical_height);
     theme = DEFAULT_THEME;
     font_big = scale.font(30, bold=True);
     font = scale.font(18, bold=True);

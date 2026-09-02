@@ -68,6 +68,29 @@ start();
 
 ## Run demos
 
+The 0.2 line checks the physical display size before creating Easy API windows. A demo may keep a larger logical canvas, but its physical Pygame window is scaled down to fit the current desktop/tablet/Android display. This is enabled by default through `fit_display=True`.
+
+The component examples are intentionally small and independent:
+
+```bash
+python examples/components/demo_label.py
+python examples/components/demo_button.py
+python examples/components/demo_textinput.py
+python examples/components/demo_textarea.py
+python examples/components/demo_slider.py
+python examples/components/demo_canvas.py
+python examples/components/demo_chart.py
+python examples/components/demo_terminal.py
+python examples/components/demo_all.py
+```
+
+`sumgdialog` also has an interactive launcher, mirroring the role of `sumdialog --demo` for the graphical backend:
+
+```bash
+sumgdialog --demo
+```
+
+
 ```bash
 python examples/demo_bgi-like_canvas.py 
 python examples/demo_code_runner.py 
@@ -283,6 +306,14 @@ Defaults keep the dialog fully opaque and dim the background moderately.
 
 
 
+
+## Physical display fitting
+
+`sumgui.display.desktop_size()` queries Pygame/SDL for the current physical display and `fit_window_size()` preserves the requested aspect ratio while reducing windows that would not fit. `sumgui.easy.window()` applies this policy before `pygame.display.set_mode()` unless `fit_display=False` is explicitly requested.
+
+For example, a logical 720x700 demo remains a 720x700 layout, while the actual window may be smaller on a low-height display. Widget coordinates continue to be transformed by `Scale`.
+
+This policy is also used by `sumgdialog`, `sumchart --backend=gui`, and the direct-Pygame examples shipped with sumGUI.
 
 ## Shared chart model (0.2 line)
 

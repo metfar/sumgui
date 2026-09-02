@@ -33,7 +33,7 @@ if PROJECT_ROOT not in sys.path:
 
 from sumgui.easy import *;
 
-window("My first SumGUI program", width=800, height=800, theme="DOS");#width=1072, height=2100,
+window("My first SumGUI program", width=640, height=320, base_width=640, base_height=320, theme="DOS");
 
 say("READY.", 20, 20, w=300, h=40, font_size=24, bold=True);
 button("HELLO", 20, 60, 180, 70, font_size=40,do=lambda: alert("Hello from SumGUI!"));

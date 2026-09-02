@@ -26,11 +26,12 @@
 # before the top-level package has forced pygame to load.
 import pygame;
 
-__version__ = "0.2.0a2";
+__version__ = "0.2.0a3";
 
 from .contracts import GUI_BACKEND, backend_capabilities;
 from .eventbridge import event_to_common, touch_to_mouse_event;
 from .graphics import GraphicsSurface;
+from .display import desktop_size, display_size, fit_window_size;
 from .theme import C64_COLORS, DEFAULT_THEME, DOS_COLORS, MSX_COLORS, SPECTRUM_COLORS, THEMES, Theme, make_theme;
 from .scale import Scale;
 from .keymap import KeyMap, default_voxel_keymap;

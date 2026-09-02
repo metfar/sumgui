@@ -48,7 +48,7 @@ for nombre in ["José", "François", "Jürgen", "Miyuki"]:
 
 
 def main():
-    window("SumGUI Code TextArea", width=720, height=720, font_size=18);
+    window("SumGUI Code TextArea", width=720, height=680, base_width=720, base_height=680, font_size=18);
     label("Python TextArea: real tabs + simple vi-like colours", 20, 20, 660, 36);
     textarea(20, 70, 660, 560, text=CODE, accepts_tab=True, tab_size=4, syntax="python");
     start();

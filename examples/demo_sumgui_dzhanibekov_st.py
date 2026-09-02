@@ -119,9 +119,9 @@ def main():
     app = sg.window(
         "Dzhanibekov - SumGUI",
         780,
-        960,
+        720,
         base_width=720,
-        base_height=960,
+        base_height=720,
         scale_mode="fit",
         fullscreen=False,
         font_size=18,

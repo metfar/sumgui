@@ -14,4 +14,14 @@ The next convergence milestones are:
 
 Pygame is the graphical backend. NumPy may be used as an optional accelerator later; pandas is not a toolkit dependency.
 
+## Physical display versus logical layout
+
+sumGUI must never assume that the requested logical demo size is available as a physical desktop window. `desktop_size()` queries SDL/Pygame before window creation and `fit_window_size()` reduces oversized windows while preserving aspect ratio. The Easy API keeps widget coordinates in the logical `base_width x base_height` space, so the same application can fit a 768-pixel-high notebook, a tablet, Android, or a larger desktop.
+
+This is a backend responsibility, not a BASIC-specific rule. Future sumC/sumCPP/sumASM/sumPY/sumR applications receive the same behavior.
+
+## Shared chart interchange
+
+`sumchart` is the neutral command-line dispatcher for `sum.chart/1`. Language examples can emit one JSON contract and choose rendering only at execution time (`--backend=tui` or `--backend=gui`). This is the reference pattern for future native language bindings.
+
 <p align=center><b>- oOo -<b></p>

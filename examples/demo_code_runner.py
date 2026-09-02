@@ -46,7 +46,7 @@ for i in range(5):
 
 def main():
     fs=30;
-    window("SumGUI code runner", width=960, height=800, font_size=fs, theme="dark");
+    window("SumGUI code runner", width=720, height=700, base_width=720, base_height=700, font_size=fs, theme="dark");
     label("Code editor + terminal", 20, 15, 580, 50, bold=True);
     label("Run executes the editor text with stdout/stderr captured below.", 20, 42, 660, 24, font_size=fs);
 

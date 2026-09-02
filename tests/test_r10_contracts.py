@@ -67,3 +67,31 @@ def test_event_bridge_normalizes_touch_coordinates():
     compatibility = module.touch_to_mouse_event(source, (800, 600));
     assert compatibility.type == pygame.MOUSEBUTTONDOWN;
     assert compatibility.pos == (400, 150);
+
+
+def test_display_fit_keeps_768p_examples_on_screen():
+    pygame = types.ModuleType("pygame");
+    pygame.error = RuntimeError;
+    class Display:
+        @staticmethod
+        def get_init():
+            return True;
+        @staticmethod
+        def get_desktop_sizes():
+            return [(1366, 768)];
+        @staticmethod
+        def Info():
+            return types.SimpleNamespace(current_w=1366, current_h=768);
+    pygame.display = Display;
+    sys.modules["pygame"] = pygame;
+    _package_stub();
+    path = Path(__file__).resolve().parents[1] / "sumgui" / "display.py";
+    spec = importlib.util.spec_from_file_location("sumgui.display", path);
+    module = importlib.util.module_from_spec(spec);
+    sys.modules["sumgui.display"] = module;
+    spec.loader.exec_module(module);
+    width, height = module.fit_window_size(1074, 2102);
+    assert width <= 1366 - 32;
+    assert height <= 768 - 64;
+    assert (width, height) == module.fit_window_size(1074, 2102, desktop=(1366, 768));
+    assert module.fit_window_size(640, 480, desktop=(1366, 768)) == (640, 480);

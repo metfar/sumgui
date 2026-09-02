@@ -29,6 +29,7 @@ from sumui import modern_mode;
 from .dialogs import input_box, message_box;
 from .keyrepeat import enable_key_repeat, get_events;
 from .eventbridge import is_focus_loss, touch_to_mouse_event;
+from .display import fit_window_size;
 from .scale import Scale;
 from .theme import DEFAULT_THEME, make_theme;
 from .commands import command_help, command_list;
@@ -173,20 +174,25 @@ class AlertBox(Widget):
 
 
 class EasyApp:
-    def __init__(self, title="SumGUI", width=720, height=720, font_name="monospace", font_size=18, font_scale=1.0, theme=None, base_width=720, base_height=720, scale_mode="fit", fullscreen=False):
+    def __init__(self, title="SumGUI", width=720, height=720, font_name="monospace", font_size=18, font_scale=1.0, theme=None, base_width=720, base_height=720, scale_mode="fit", fullscreen=False, fit_display=True):
         pygame.init();
         self.title = title;
-        self.width = int(width);
-        self.height = int(height);
+        self.requested_width = int(width);
+        self.requested_height = int(height);
+        self.width = self.requested_width;
+        self.height = self.requested_height;
         self.base_width = int(base_width);
         self.base_height = int(base_height);
         self.scale_mode = scale_mode;
         self.fullscreen = bool(fullscreen);
+        self.fit_display = bool(fit_display);
         self.theme = make_theme(theme) if isinstance(theme, str) else (theme or DEFAULT_THEME);
         if self.fullscreen:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN);
             self.width, self.height = self.screen.get_size();
         else:
+            if self.fit_display:
+                self.width, self.height = fit_window_size(self.width, self.height);
             self.screen = pygame.display.set_mode((self.width, self.height));
         pygame.display.set_caption(title);
         self.clock = pygame.time.Clock();
@@ -281,14 +287,14 @@ class EasyApp:
         pygame.quit();
 
 
-def window(title="SumGUI", width=720, height=720, font_name="monospace", font_size=18, font_scale=1.0, theme=None, base_width=720, base_height=720, scale_mode="fit", fullscreen=False):
+def window(title="SumGUI", width=720, height=720, font_name="monospace", font_size=18, font_scale=1.0, theme=None, base_width=720, base_height=720, scale_mode="fit", fullscreen=False, fit_display=True):
     global _app;
-    _app = EasyApp(title, width, height, font_name, font_size, font_scale, theme, base_width, base_height, scale_mode, fullscreen);
+    _app = EasyApp(title, width, height, font_name, font_size, font_scale, theme, base_width, base_height, scale_mode, fullscreen, fit_display);
     return _app;
 
 
-def screen(title="SumGUI", width=720, height=720, font_name="monospace", font_size=18, font_scale=1.0, theme=None, base_width=720, base_height=720, scale_mode="fit", fullscreen=False):
-    return window(title, width, height, font_name, font_size, font_scale, theme, base_width, base_height, scale_mode, fullscreen);
+def screen(title="SumGUI", width=720, height=720, font_name="monospace", font_size=18, font_scale=1.0, theme=None, base_width=720, base_height=720, scale_mode="fit", fullscreen=False, fit_display=True):
+    return window(title, width, height, font_name, font_size, font_scale, theme, base_width, base_height, scale_mode, fullscreen, fit_display);
 
 
 def app():

@@ -1,3 +1,4 @@
+CHANGELOG.md
 LICENSE
 MANIFEST.in
 README.md
@@ -21,12 +22,22 @@ examples/demo_shared_chart_spec.py
 examples/demo_sumgui_dzhanibekov_st.py
 examples/demo_textinput_keyrepeat.py
 examples/demo_themes.py
+examples/components/demo_all.py
+examples/components/demo_button.py
+examples/components/demo_canvas.py
+examples/components/demo_chart.py
+examples/components/demo_label.py
+examples/components/demo_slider.py
+examples/components/demo_terminal.py
+examples/components/demo_textarea.py
+examples/components/demo_textinput.py
 sumgui/__init__.py
 sumgui/charts.py
 sumgui/clipboard.py
 sumgui/commands.py
 sumgui/contracts.py
 sumgui/dialogs.py
+sumgui/display.py
 sumgui/easy.py
 sumgui/eventbridge.py
 sumgui/graphics.py

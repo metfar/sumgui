@@ -41,7 +41,7 @@ if PROJECT_ROOT not in sys.path:
 from sumgui.easy import *;
 
 
-window("SumGUI quick start", width=720, height=720, font_size=22, theme="ZX");
+window("SumGUI quick start", width=720, height=580, base_width=720, base_height=580, font_size=22, theme="ZX");
 say("READY.", 20, 20, 300, 40, font_size=28, bold=True);
 say("This is the beginner-friendly API.", 20, 70, 520, 34);
 button("ALERT", 20, 130, 180, 70, do=lambda: alert("Hello from SumGUI!"));

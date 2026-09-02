@@ -28,6 +28,7 @@ import sys;
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")));
 
 import pygame;
+from sumgui.display import fit_window_size;
 
 
 import os;
@@ -42,16 +43,17 @@ from sumgui import ColorPicker, Label, Panel, Scale, Slider, THEMES, enable_key_
 
 def main():
     pygame.init();
-    screen = pygame.display.set_mode((720, 720));
+    screen = pygame.display.set_mode(fit_window_size(720, 720));
+    physical_width, physical_height = screen.get_size();
     pygame.display.set_caption("SumGUI ColorPicker");
     clock = pygame.time.Clock();
     theme = THEMES["Dark"];
-    scale = Scale(720, 720);
+    scale = Scale(physical_width, physical_height, base_width=720, base_height=720);
     font = scale.font(18, bold=True);
     big = scale.font(26, bold=True);
     selected = {"rgb": (0, 0, 0)};
 
-    panel = Panel(pygame.Rect(0, 0, 720, 720), theme);
+    panel = Panel(pygame.Rect(0, 0, physical_width, physical_height), theme);
     label = panel.add(Label(pygame.Rect(30, 30, 620, 40), "Color: (0, 0, 0)", big, theme));
 
     def changed(widget, rgb):
