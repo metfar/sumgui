@@ -1,2 +1,2 @@
-sumui>=0.1.0a3
+sumui>=0.1.0a5
 pygame>=2.0

@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: sumgui
-Version: 0.2.0a4
+Version: 0.2.0a7
 Summary: A tiny retro-flavored GUI toolkit for Pygame.
 Author: William Martinez Bas
 Author-email: William Martinez Bas <metfar@gmail.com>
@@ -13,7 +13,7 @@ Classifier: Topic :: Software Development :: User Interfaces
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: sumui>=0.1.0a3
+Requires-Dist: sumui>=0.1.0a5
 Requires-Dist: pygame>=2.0
 Dynamic: author
 Dynamic: license-file
@@ -356,5 +356,18 @@ view = ChartView(rect, spec, font);
 ```
 
 The existing `BarChart`, `LineChart`, `PieChart` and `ScatterChart` classes remain available during migration.
+
+## Graphical presentation of existing Sum applications
+
+The convergence backend is deliberately different from writing a second GUI application. A Sum application is constructed once and sumGUI presents that live application through Pygame:
+
+```text
+application -> Sum application model -> sumTUI terminal presentation
+                                 \-> sumGUI graphical presentation
+```
+
+The graphical backend translates keyboard, mouse, wheel, drag, resize and touch to the application's existing Sum events. It currently renders the shared Rich/widget tree as styled graphical character cells; this immediately provides functional parity while native pixel renderers are introduced progressively. Native widgets such as `EditorView` are the next rendering layer, not alternate application logic.
+
+The graphical presentation uses the active Sum theme by default, including the established DOS/retro and modern schemes. Backend-specific graphical themes may be added later without changing application behavior.
 
 <p align=center><b>- oOo -<b></p>

@@ -336,4 +336,17 @@ view = ChartView(rect, spec, font);
 
 The existing `BarChart`, `LineChart`, `PieChart` and `ScatterChart` classes remain available during migration.
 
+## Graphical presentation of existing Sum applications
+
+The convergence backend is deliberately different from writing a second GUI application. A Sum application is constructed once and sumGUI presents that live application through Pygame:
+
+```text
+application -> Sum application model -> sumTUI terminal presentation
+                                 \-> sumGUI graphical presentation
+```
+
+The graphical backend translates keyboard, mouse, wheel, drag, resize and touch to the application's existing Sum events. It currently renders the shared Rich/widget tree as styled graphical character cells; this immediately provides functional parity while native pixel renderers are introduced progressively. Native widgets such as `EditorView` are the next rendering layer, not alternate application logic.
+
+The graphical presentation uses the active Sum theme by default, including the established DOS/retro and modern schemes. Backend-specific graphical themes may be added later without changing application behavior.
+
 <p align=center><b>- oOo -<b></p>

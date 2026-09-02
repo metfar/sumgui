@@ -57,7 +57,7 @@ def main():
     theme = DEFAULT_THEME;
     font_big = scale.font(30, bold=True);
     font = scale.font(18, bold=True);
-    status = StatusBar(scale.rect(0, 1220, 720, 60), font, theme=theme, zones=[{"text":"READY", "width":-1}, {"text":"ROW 0", "width":130}, {"text":"COL 0", "width":130}, {"text":"SUMGUI 0.2.0a4", "width":230, "align":"right"}]);
+    status = StatusBar(scale.rect(0, 1220, 720, 60), font, theme=theme, zones=[{"text":"READY", "width":-1}, {"text":"ROW 0", "width":130}, {"text":"COL 0", "width":130}, {"text":"SUMGUI 0.2.0a7", "width":230, "align":"right"}]);
 
     def set_status(text):
         status.set_zone(0, text);

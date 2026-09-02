@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.2.0a7 - 2026-09-02
+- ZX is now the native GUI default theme and the default for sumgdialog and graphical demos.
+- Removed the retired third-party-derived colour scheme from the built-in GUI theme registry.
+- Unknown theme names fall back to ZX so legacy saved configurations remain launchable.
+- The shared-application renderer continues to consume the exact active application theme.
+
+## 0.2.0a6 - 2026-09-02
+
+- Added `GraphicalApplicationBackend`, a Pygame presentation backend for the **same live Sum application tree** used by sumTUI. This is the first Vim/GVim-style convergence milestone: application logic is not reimplemented for graphical mode.
+- The backend renders Rich semantic styles into graphical character cells, so existing menus, status/function bars, dialogs, editor syntax highlighting and TUI color schemes immediately carry into graphical presentation.
+- Pygame keyboard, text input, mouse press/release/move, drag, wheel and resize events are translated to the application's existing Sum events. Native Android/Pygame FINGER events are translated once and synthesized `touch=True` mouse duplicates are suppressed.
+- Added `EditorView`, a native pixel-editor surface for the next renderer stage. It supports line numbers, semantic syntax roles, invisibles/control glyphs, horizontal/vertical scrolling and live syntax-cache invalidation after edits.
+- Added GUI theme definitions aligned with the established Sum schemes (`ZX`, `DOS`, `RAR`, `DBASE`, `FOXPRO`, `XBASE`, `C64`, `MSX`, `Dark`, `Light`). ZX is the fresh-install default. The shared application renderer continues to use the exact active sumTUI theme styles.
+- Includes the 0.2.0a5 `sumgdialog` Tab/Shift+Tab focus traversal fix and retains UDG Painter Reborn.
+
+## 0.2.0a5 - 2026-09-02
+
+- `sumgdialog` now uses the common focus ring for dialog controls.
+- `Tab` moves from an entry to the next focusable field/component/button; `Shift+Tab` moves backwards.
+- Entry dialogs traverse `Entry -> OK -> CANCEL -> Entry` cyclically.
+- Question/message dialogs and the `sumgdialog --demo` launcher use the same keyboard-focus rules.
+- Focused buttons use the existing visual focus border and activate with Enter/Space.
+
 ## 0.2.0a4 - 2026-09-02
 
 - Restored **UDG Painter Reborn** to the distributable package after it was accidentally omitted from the r11 final artifact; the installed `sumudg` command launches the packaged application and its UDG/image/icon resources are included in wheel/sdist builds.

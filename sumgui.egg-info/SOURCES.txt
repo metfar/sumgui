@@ -33,6 +33,7 @@ examples/components/demo_terminal.py
 examples/components/demo_textarea.py
 examples/components/demo_textinput.py
 sumgui/__init__.py
+sumgui/application_backend.py
 sumgui/charts.py
 sumgui/clipboard.py
 sumgui/commands.py

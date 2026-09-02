@@ -1237,7 +1237,7 @@ class GridWidget(Widget):
 
 
 class TextArea(Widget):
-    def __init__(self, rect, font, text="", multiline=True, show_scrollbar=True, editable=True, max_lines=-1, max_cols=-1, theme=None, show_v_scrollbar=None, show_h_scrollbar=False, accepts_tab=False, tab_index=0, tab_size=4, syntax=None):
+    def __init__(self, rect, font, text="", multiline=True, show_scrollbar=True, editable=True, max_lines=-1, max_cols=-1, theme=None, show_v_scrollbar=None, show_h_scrollbar=False, accepts_tab=False, tab_index=0, tab_size=4, syntax=None, syntax_highlighter=None, line_numbers=False, show_spaces=False, show_tabs=False, show_line_endings=False, show_control_chars=False):
         super().__init__(rect, focusable=True, tab_index=tab_index, accepts_tab=accepts_tab);
         self.font = font;
         self.lines = text.split("\n") if text else [""];
@@ -1265,6 +1265,14 @@ class TextArea(Widget):
         self.selection_anchor = None;
         self.tab_size = max(1, int(tab_size));
         self.syntax = syntax;
+        self.syntax_highlighter = syntax_highlighter if syntax_highlighter is not None else (syntax if hasattr(syntax, "highlight") else None);
+        self.line_numbers = bool(line_numbers);
+        self.show_spaces = bool(show_spaces);
+        self.show_tabs = bool(show_tabs);
+        self.show_line_endings = bool(show_line_endings);
+        self.show_control_chars = bool(show_control_chars);
+        self._syntax_cache_text = None;
+        self._syntax_cache_roles = None;
 
     def set_focus(self, focused=True):
         super().set_focus(focused);
@@ -1283,7 +1291,13 @@ class TextArea(Widget):
         self.cursor_row = min(self.cursor_row, len(self.lines) - 1);
         self.cursor_col = min(self.cursor_col, len(self.lines[self.cursor_row]));
         self.clear_selection();
+        self._invalidate_syntax();
         self.ensure_visible();
+
+    def _invalidate_syntax(self):
+        self._syntax_cache_text = None;
+        self._syntax_cache_roles = None;
+        return None;
 
     def cursor_position(self):
         return (self.cursor_row, self.cursor_col);
@@ -1360,6 +1374,7 @@ class TextArea(Widget):
         self.cursor_row = start_row;
         self.cursor_col = start_col;
         self.clear_selection();
+        self._invalidate_syntax();
         self.ensure_visible();
         return True;
 
@@ -1384,6 +1399,7 @@ class TextArea(Widget):
         self.scroll_row = 0;
         self.scroll_col = 0;
         self.clear_selection();
+        self._invalidate_syntax();
         self.ensure_visible();
 
     def paste_text(self):
@@ -1418,8 +1434,67 @@ class TextArea(Widget):
 
         return len(line);
 
+    def _syntax_roles(self):
+        if self.syntax_highlighter is None:
+            return None;
+        source = self.text();
+        if source == self._syntax_cache_text and self._syntax_cache_roles is not None:
+            return self._syntax_cache_roles;
+        try:
+            roles = self.syntax_highlighter.highlight(source);
+        except Exception:
+            roles = None;
+        self._syntax_cache_text = source;
+        self._syntax_cache_roles = roles;
+        return roles;
+
+    @staticmethod
+    def _control_picture(char):
+        code = ord(char);
+        if 0 <= code <= 31:
+            return chr(0x2400 + code);
+        if code == 127:
+            return "␡";
+        return char;
+
+    def display_cells_for_row(self, row):
+        row = max(0, min(len(self.lines) - 1, int(row)));
+        line = self.lines[row];
+        all_roles = self._syntax_roles();
+        roles = all_roles[row] if all_roles is not None and row < len(all_roles) else None;
+        cells = [];
+        visual_col = 0;
+        for index, char in enumerate(line):
+            role = roles[index] if roles is not None and index < len(roles) and roles[index] else None;
+            if char == "\t":
+                width = self.tab_size - (visual_col % self.tab_size);
+                if self.show_tabs:
+                    cells.append(("⇥", "editor_tab"));
+                    for _unused in range(max(0, width - 1)):
+                        cells.append((" ", "editor_tab"));
+                else:
+                    for _unused in range(width):
+                        cells.append((" ", role));
+                visual_col += width;
+                continue;
+            if char == " " and self.show_spaces:
+                cells.append(("·", "editor_space"));
+            elif (ord(char) < 32 or ord(char) == 127) and self.show_control_chars:
+                cells.append((self._control_picture(char), "editor_control"));
+            else:
+                cells.append((char, role));
+            visual_col += 1;
+        if self.show_line_endings:
+            cells.append(("↵", "editor_eol"));
+        return cells;
+
+    def visible_styled_cells(self, row, cols):
+        cells = self.display_cells_for_row(row);
+        return cells[self.scroll_col:self.scroll_col + cols];
+
     def max_line_length(self):
-        return max([len(self.expanded_line(line)) for line in self.lines] + [0]);
+        extra = 1 if self.show_line_endings else 0;
+        return max([len(self.expanded_line(line)) + extra for line in self.lines] + [0]);
 
     def content_rect(self):
         rect = self.rect.inflate(-self.padding * 2, -self.padding * 2);
@@ -1429,12 +1504,26 @@ class TextArea(Widget):
             rect.height = max(1, rect.height - self.scrollbar_size);
         return rect;
 
+    def gutter_width(self):
+        if not self.line_numbers:
+            return 0;
+        char_w = max(1, self.font.size("M")[0]);
+        digits = len(str(max(1, len(self.lines))));
+        return max(4, digits + 2) * char_w;
+
+    def text_content_rect(self):
+        rect = self.content_rect().copy();
+        gutter = self.gutter_width();
+        rect.x += gutter;
+        rect.width = max(1, rect.width - gutter);
+        return rect;
+
     def visible_rows(self):
-        rect = self.content_rect();
+        rect = self.text_content_rect();
         return max(1, rect.height // max(1, self.font.get_height()));
 
     def visible_cols(self):
-        rect = self.content_rect();
+        rect = self.text_content_rect();
         char_w = max(1, self.font.size("M")[0]);
         return max(1, rect.width // char_w);
 
@@ -1478,6 +1567,7 @@ class TextArea(Widget):
             self.lines[self.cursor_row] = line[:self.cursor_col] + char + line[self.cursor_col:];
             self.cursor_col += 1;
         self.clear_selection();
+        self._invalidate_syntax();
         self.ensure_visible();
 
     def newline(self):
@@ -1495,6 +1585,7 @@ class TextArea(Widget):
         self.cursor_row += 1;
         self.cursor_col = 0;
         self.clear_selection();
+        self._invalidate_syntax();
         self.ensure_visible();
 
     def backspace(self):
@@ -1512,6 +1603,7 @@ class TextArea(Widget):
             self.lines.pop(self.cursor_row);
             self.cursor_row -= 1;
             self.cursor_col = old_len;
+        self._invalidate_syntax();
         self.ensure_visible();
 
     def delete(self):
@@ -1525,6 +1617,7 @@ class TextArea(Widget):
         elif self.cursor_row + 1 < len(self.lines):
             self.lines[self.cursor_row] += self.lines[self.cursor_row + 1];
             self.lines.pop(self.cursor_row + 1);
+        self._invalidate_syntax();
         self.ensure_visible();
 
     def move_cursor(self, dx, dy, selecting=False):
@@ -1560,7 +1653,7 @@ class TextArea(Widget):
         self.set_cursor(row, col, selecting=selecting);
 
     def position_from_mouse(self, pos):
-        rect = self.content_rect();
+        rect = self.text_content_rect();
         line_h = self.font.get_height();
         char_w = max(1, self.font.size("M")[0]);
         row = self.scroll_row + max(0, min(self.visible_rows() - 1, (pos[1] - rect.y) // line_h));
@@ -1609,7 +1702,7 @@ class TextArea(Widget):
                     self.drag_scroll = hit;
                     self.apply_scroll_drag(event.pos);
                     return True;
-                if self.content_rect().collidepoint(event.pos):
+                if self.text_content_rect().collidepoint(event.pos):
                     row, col = self.position_from_mouse(event.pos);
                     self.set_cursor(row, col, selecting=False);
                     self.selection_anchor = (row, col);
@@ -1833,20 +1926,14 @@ class TextArea(Widget):
 
         return tokens;
 
-    def draw_code_line(self, screen, text, x, y, rect):
-        if self.syntax != "python":
-            draw_clipped_text(screen, self.font, text, self.theme.text, pygame.Rect(x, y, rect.width, self.font.get_height()));
-            return;
-
+    def draw_styled_cells(self, screen, cells, x, y, rect, char_w):
         cursor_x = x;
-
-        for token in self.split_python_tokens(text):
-            color = self.python_token_color(token);
-            rendered = self.font.render(token, True, color);
+        for char, role in cells:
+            color = self.theme.role_color(role) if hasattr(self.theme, "role_color") else self.theme.text;
+            rendered = self.font.render(char, True, color);
             screen.blit(rendered, (cursor_x, y));
-            cursor_x += rendered.get_width();
-
-            if cursor_x > rect.right:
+            cursor_x += char_w;
+            if cursor_x >= rect.right:
                 break;
 
     def draw(self, screen):
@@ -1854,7 +1941,13 @@ class TextArea(Widget):
         pygame.draw.rect(screen, self.theme.cursor if self.active else self.theme.line, self.rect, 3 if self.active else 2, border_radius=8);
         line_h = self.font.get_height();
         char_w = max(1, self.font.size("M")[0]);
-        text_rect = self.content_rect();
+        full_rect = self.content_rect();
+        text_rect = self.text_content_rect();
+        gutter_width = self.gutter_width();
+        if gutter_width:
+            gutter_rect = pygame.Rect(full_rect.x, full_rect.y, gutter_width, full_rect.height);
+            pygame.draw.rect(screen, getattr(self.theme, "viewer_bg", self.theme.bg), gutter_rect);
+            pygame.draw.line(screen, self.theme.line, (gutter_rect.right - 1, gutter_rect.y), (gutter_rect.right - 1, gutter_rect.bottom), 1);
         def draw_inside():
             rows = self.visible_rows();
             cols = self.visible_cols();
@@ -1862,11 +1955,15 @@ class TextArea(Widget):
                 row = self.scroll_row + index;
                 if row >= len(self.lines):
                     break;
-                line = self.lines[row];
-                visible = self.visible_text_slice(line, cols);
                 y = text_rect.y + index * line_h;
+                if gutter_width:
+                    number = str(row + 1).rjust(max(1, gutter_width // char_w - 1));
+                    color = self.theme.role_color("editor_gutter") if hasattr(self.theme, "role_color") else self.theme.muted;
+                    rendered_number = self.font.render(number, True, color);
+                    screen.blit(rendered_number, (full_rect.x, y));
                 self.draw_selection_for_row(screen, text_rect, row, y, char_w, line_h);
-                self.draw_code_line(screen, visible, text_rect.x, y, text_rect);
+                cells = self.visible_styled_cells(row, cols);
+                self.draw_styled_cells(screen, cells, text_rect.x, y, text_rect, char_w);
             if self.active and self.cursor_visible:
                 if self.scroll_row <= self.cursor_row < self.scroll_row + rows:
                     visual_col = self.visual_col_from_index(self.lines[self.cursor_row], self.cursor_col);
@@ -1874,8 +1971,32 @@ class TextArea(Widget):
                     cy = text_rect.y + (self.cursor_row - self.scroll_row) * line_h;
                     if text_rect.collidepoint(cx, cy):
                         pygame.draw.rect(screen, self.theme.cursor, pygame.Rect(cx, cy + 2, 3, line_h - 4));
-        with_clip(screen, text_rect, draw_inside);
+        with_clip(screen, full_rect, draw_inside);
         self.draw_scrollbar(screen);
+
+
+class EditorView(TextArea):
+    """Native SumGUI editor surface using semantic syntax roles.
+
+    This is the pixel-rendered counterpart of the common editor presentation.
+    It accepts any highlighter exposing ``highlight(text) -> roles per line``;
+    sumedit/sumIDE currently reuse their existing semantic highlighter.
+    """;
+    def __init__(self, rect, font, text="", theme=None, syntax_highlighter=None, tab_size=4,
+                 line_numbers=True, show_spaces=False, show_tabs=False, show_line_endings=False,
+                 show_control_chars=False, **kwargs):
+        kwargs.setdefault("multiline", True);
+        kwargs.setdefault("editable", True);
+        kwargs.setdefault("show_v_scrollbar", True);
+        kwargs.setdefault("show_h_scrollbar", True);
+        kwargs.setdefault("accepts_tab", True);
+        super().__init__(
+            rect, font, text=text, theme=theme, tab_size=tab_size,
+            syntax_highlighter=syntax_highlighter, line_numbers=line_numbers,
+            show_spaces=show_spaces, show_tabs=show_tabs,
+            show_line_endings=show_line_endings, show_control_chars=show_control_chars,
+            **kwargs
+        );
 
 
 class TextInput(TextArea):

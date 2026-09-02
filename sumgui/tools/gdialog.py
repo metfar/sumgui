@@ -18,7 +18,7 @@ import pygame;
 from .. import __version__;
 from ..dialogs import _dialog_events, input_box, message_box, question_box;
 from ..display import fit_window_size;
-from ..widgets import draw_clipped_text;
+from ..widgets import Button, Panel, draw_clipped_text;
 from ..theme import make_theme;
 
 
@@ -45,7 +45,7 @@ def build_parser():
     parser.add_argument("--case-sensitive", action="store_true");
     parser.add_argument("--confirm", dest="confirm", action="store_true", default=True);
     parser.add_argument("--no-confirm", dest="confirm", action="store_false");
-    parser.add_argument("--theme", default="DOS");
+    parser.add_argument("--theme", default="ZX");
     parser.add_argument("--width", type=int, default=720);
     parser.add_argument("--height", type=int, default=480);
     parser.add_argument("--version", action="version", version="sumgdialog {}".format(__version__));
@@ -74,44 +74,41 @@ def _demo_menu(screen, clock, theme):
     usable_h = max(120, height - header_h - margin * 2);
     button_h = max(38, min(64, (usable_h - gap * max(0, rows - 1)) // max(1, rows)));
     button_w = (width - margin * 2 - gap * (columns - 1)) // columns;
-    rects = [];
+    state = {"choice": None};
+    panel = Panel(pygame.Rect(0, 0, width, height), theme=theme);
+    buttons = [];
+
+    def choose(value):
+        def callback(unused_button=None):
+            state["choice"] = value;
+        return callback;
+
     for index, item in enumerate(choices):
         row = index // columns;
         column = index % columns;
         x = margin + column * (button_w + gap);
         y = header_h + row * (button_h + gap);
-        rects.append((item, pygame.Rect(x, y, button_w, button_h)));
-    pressed = None;
+        button = Button(
+            pygame.Rect(x, y, button_w, button_h), item[1], font,
+            on_click=choose(item[0]), theme=theme, tab_index=index,
+        );
+        buttons.append(panel.add(button));
     while True:
         for event in _dialog_events(screen):
             if event.type == pygame.QUIT:
                 return "exit";
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 return "exit";
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                pressed = None;
-                for item, rect in rects:
-                    if rect.collidepoint(event.pos):
-                        pressed = item[0];
-                        break;
-            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                selected = pressed;
-                pressed = None;
-                if selected is not None:
-                    for item, rect in rects:
-                        if item[0] == selected and rect.collidepoint(event.pos):
-                            return selected;
+            panel.handle_event(event);
+            if state["choice"] is not None:
+                return state["choice"];
         screen.fill(theme.bg);
         draw_clipped_text(screen, title_font, "sumgdialog --demo", theme.text, pygame.Rect(margin, margin, width - margin * 2, title_font.get_height() + 4), align="center");
         draw_clipped_text(screen, font, "Choose a modality", theme.text, pygame.Rect(margin, margin + title_font.get_height() + 6, width - margin * 2, font.get_height() + 4), align="center");
-        for item, rect in rects:
-            color = getattr(theme, "accent", theme.button) if pressed == item[0] else theme.button;
-            pygame.draw.rect(screen, color, rect, border_radius=8);
-            pygame.draw.rect(screen, theme.line, rect, 2, border_radius=8);
-            draw_clipped_text(screen, font, item[1], theme.button_text, rect, align="center", valign="middle");
+        for button in buttons:
+            button.draw(screen);
         pygame.display.flip();
         clock.tick(60);
-
 
 def _run_demo(screen, clock, theme):
     while True:
