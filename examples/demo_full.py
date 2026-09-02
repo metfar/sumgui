@@ -40,8 +40,10 @@ if PROJECT_ROOT not in sys.path:
 from sumgui.display import fit_window_size;
 from sumgui import BarChart, Button, CanvasArea, DEFAULT_THEME, GridWidget, Label, LineChart, PaletteWidget, Panel, Scale, ScatterChart, Slider, StatusBar, TextArea, ToolBar, enable_key_repeat, get_events, message_box;
 
+BASE_WIDTH = 720;
+BASE_HEIGHT = 1280;
 HEIGHT = 720;
-WIDTH = int(720 * (HEIGHT / 1280));
+WIDTH = int(BASE_WIDTH * (HEIGHT / BASE_HEIGHT));
 
 
 def main():
@@ -51,11 +53,11 @@ def main():
     physical_width, physical_height = screen.get_size();
     pygame.display.set_caption("SumGUI Alpha Demo");
     clock = pygame.time.Clock();
-    scale = Scale(physical_width, physical_height);
+    scale = Scale(physical_width, physical_height, base_width=BASE_WIDTH, base_height=BASE_HEIGHT);
     theme = DEFAULT_THEME;
     font_big = scale.font(30, bold=True);
     font = scale.font(18, bold=True);
-    status = StatusBar(scale.rect(0, 1220, 720, 60), font, theme=theme, zones=[{"text":"READY", "width":-1}, {"text":"ROW 0", "width":130}, {"text":"COL 0", "width":130}, {"text":"SUMGUI 0.0.1a10", "width":230, "align":"right"}]);
+    status = StatusBar(scale.rect(0, 1220, 720, 60), font, theme=theme, zones=[{"text":"READY", "width":-1}, {"text":"ROW 0", "width":130}, {"text":"COL 0", "width":130}, {"text":"SUMGUI 0.2.0a4", "width":230, "align":"right"}]);
 
     def set_status(text):
         status.set_zone(0, text);

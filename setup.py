@@ -26,17 +26,19 @@ from setuptools import find_packages, setup;
 
 setup(
     name="sumgui",
-    version="0.2.0a3",
+    version="0.2.0a4",
     description="A tiny retro-flavored GUI toolkit for Pygame.",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     author="William Martinez Bas",
     author_email="metfar@gmail.com",
     license="GPL-2.0-or-later",
-    packages=find_packages(),
+    packages=find_packages(include=["sumgui*", "udg_painter_reborn*"]),
+    include_package_data=True,
+    package_data={"udg_painter_reborn": ["*.udg", "*.xpm", "*.ico", "*.png", "*.md", "LICENSE"]},
     python_requires=">=3.8",
     install_requires=["sumui>=0.1.0a3", "pygame>=2.0"],
-    entry_points={"console_scripts": ["sumgdialog=sumgui.tools.gdialog:main"]},
+    entry_points={"console_scripts": ["sumgdialog=sumgui.tools.gdialog:main", "sumudg=udg_painter_reborn.udg_painter_sumgui:main"]},
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",

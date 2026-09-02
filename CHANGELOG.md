@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0a4 - 2026-09-02
+
+- Restored **UDG Painter Reborn** to the distributable package after it was accidentally omitted from the r11 final artifact; the installed `sumudg` command launches the packaged application and its UDG/image/icon resources are included in wheel/sdist builds.
+- Added the generic `GraphicsWindow` renderer for backend-neutral `sumui.GraphicsMode` / `GraphicsCommand` streams, providing the concrete Pygame target used by sumBASIC graphics.
+- Added Spectrum palette state for `INK`, `PAPER`, `BORDER`, `BRIGHT`, `FLASH`, `INVERSE` and `OVER` while preserving arbitrary modern RGB colours.
+- Fixed `examples/demo_full.py`: its logical canvas is 720x1280, matching the actual layout instead of scaling a 720x720 logical square. This removes the large top offset and keeps the lower controls inside the fitted window.
+
 ## 0.2.0a3 - 2026-09-02
 
 - Added `sumgui.display.desktop_size()` and `fit_window_size()`; the Easy API now checks the physical display before creating a non-fullscreen window and scales large logical layouts down to fit.

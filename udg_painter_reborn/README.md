@@ -5,6 +5,8 @@ This is the UDG Painter rewritten to use the local `sumgui` toolkit instead of t
 ## Run
 
 ```bash
+sumudg
+# or from a source checkout:
 python udg_painter_sumgui.py
 ```
 
@@ -40,6 +42,4 @@ The internal palette keeps color index 8 as bright black `(22, 22, 22)`.
 
 The save filename dialog now uses SumGUI key repeat through `get_events()` and clips/scrolls the visible input window around the cursor. Holding printable keys scrolls the visible text; holding Backspace/Delete repeats as expected.
 
-<p align=center><b>- oOo -</b></p>
-
-
+<p align=center><b>- oOo -<b></p>

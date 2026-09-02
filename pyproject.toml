@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sumgui"
-version = "0.2.0a3"
+version = "0.2.0a4"
 description = "A tiny retro-flavored GUI toolkit for Pygame."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -22,6 +22,10 @@ classifiers = [
 
 [project.scripts]
 sumgdialog = "sumgui.tools.gdialog:main"
+sumudg = "udg_painter_reborn.udg_painter_sumgui:main"
 
 [tool.setuptools.packages.find]
-include = ["sumgui*"]
+include = ["sumgui*", "udg_painter_reborn*"]
+
+[tool.setuptools.package-data]
+udg_painter_reborn = ["*.udg", "*.xpm", "*.ico", "*.png", "*.md", "LICENSE"]

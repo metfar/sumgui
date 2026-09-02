@@ -95,3 +95,32 @@ def test_display_fit_keeps_768p_examples_on_screen():
     assert height <= 768 - 64;
     assert (width, height) == module.fit_window_size(1074, 2102, desktop=(1366, 768));
     assert module.fit_window_size(640, 480, desktop=(1366, 768)) == (640, 480);
+
+
+def test_demo_full_uses_its_complete_portrait_logical_canvas():
+    import ast;
+    source_path = Path(__file__).resolve().parents[1] / "examples" / "demo_full.py";
+    source = source_path.read_text(encoding="utf-8");
+    tree = ast.parse(source);
+    constants = {};
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name) and isinstance(node.value, ast.Constant):
+            constants[node.targets[0].id] = node.value.value;
+    assert constants.get("BASE_WIDTH") == 720;
+    assert constants.get("BASE_HEIGHT") == 1280;
+    calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "Scale"];
+    assert calls;
+    keywords = {item.arg: item.value for item in calls[0].keywords};
+    assert isinstance(keywords.get("base_width"), ast.Name) and keywords["base_width"].id == "BASE_WIDTH";
+    assert isinstance(keywords.get("base_height"), ast.Name) and keywords["base_height"].id == "BASE_HEIGHT";
+
+
+def test_udg_painter_reborn_is_part_of_the_source_distribution_tree():
+    root = Path(__file__).resolve().parents[1] / "udg_painter_reborn";
+    expected = (
+        "__init__.py", "__main__.py", "udg_painter_sumgui.py", "graphic.udg",
+        "casa.udg", "macaco.udg", "casa.png", "graphic.xpm", "LICENSE", "README.md",
+    );
+    assert root.is_dir();
+    for name in expected:
+        assert (root / name).is_file(), name;

@@ -3,3 +3,5 @@ include CHANGELOG.md
 include LICENSE
 recursive-include docs *.md
 recursive-include examples *.py
+recursive-include udg_painter_reborn *
+include docs/udg.png

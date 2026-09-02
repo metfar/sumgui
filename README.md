@@ -103,6 +103,8 @@ python examples/demo_textinput_keyrepeat.py
 python examples/demo_themes.py 
 ```
 
+`demo_full.py` uses a 720x1280 logical canvas because its controls extend through that full layout; physical display fitting scales that complete logical canvas instead of centering/clipping a mistaken 720x720 square. Copies intended for IDE browsing are also provided as Python examples under `sumIDE/examples/python/sumgui/`.
+
 ## Included in this alpha
 
 - Application/easy API
@@ -227,7 +229,13 @@ The demo includes a `TextArea` that serves as a tiny code editor, a `RUN` button
 This is intentionally simple and local. Running arbitrary code is dangerous; only execute code you trust.
 
 
-## 0.0.1a28 UDG Painter Reborn
+## UDG Painter Reborn
+
+The ZX Spectrum-like UDG Painter is part of the sumGUI distribution and is installed as `sumudg`.
+
+```bash
+sumudg
+```
 
 - ZX-Spectrum-like-UDG-Painter rewritten palette
 
