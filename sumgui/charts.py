@@ -182,29 +182,43 @@ class ChartView(ChartBase):
         value_count = max([len(series.values) for series in self.spec.series] or [0]);
         if value_count <= 0:
             return;
-        all_values = [value for series in self.spec.series for value in series.values];
-        min_value = self.spec.y_axis.minimum if self.spec.y_axis.minimum is not None else min([0.0] + all_values);
-        max_value = self.spec.y_axis.maximum if self.spec.y_axis.maximum is not None else max([0.0] + all_values);
-        if max_value <= min_value:
-            max_value = min_value + 1.0;
+        if self.spec.stacked:
+            positives=[0.0]*value_count; negatives=[0.0]*value_count;
+            for series in self.spec.series:
+                for index,value in enumerate(series.values):
+                    if value >= 0: positives[index] += value;
+                    else: negatives[index] += value;
+            min_value = self.spec.y_axis.minimum if self.spec.y_axis.minimum is not None else min([0.0]+negatives);
+            max_value = self.spec.y_axis.maximum if self.spec.y_axis.maximum is not None else max([0.0]+positives);
+        else:
+            all_values=[value for series in self.spec.series for value in series.values];
+            min_value = self.spec.y_axis.minimum if self.spec.y_axis.minimum is not None else min([0.0] + all_values);
+            max_value = self.spec.y_axis.maximum if self.spec.y_axis.maximum is not None else max([0.0] + all_values);
+        if max_value <= min_value: max_value=min_value+1.0;
         self.draw_axes(screen, chart, 0, max(1, value_count - 1), min_value, max_value, x_ticks=0, y_ticks=3);
-        group_width = max(1, chart.width // value_count);
-        bar_width = max(1, (group_width - 4) // series_count);
-        zero_y = chart.bottom - int((0.0 - min_value) * chart.height / (max_value - min_value));
-        zero_y = max(chart.y, min(chart.bottom, zero_y));
-        for series_index, series in enumerate(self.spec.series):
-            color = self._series_color(series_index);
-            for index, value in enumerate(series.values):
-                x = chart.x + index * group_width + 2 + series_index * bar_width;
-                y_value = chart.bottom - int((value - min_value) * chart.height / (max_value - min_value));
-                top = min(zero_y, y_value);
-                bottom = max(zero_y, y_value);
-                rect = pygame.Rect(x, top, max(1, bar_width - 1), max(1, bottom - top));
-                pygame.draw.rect(screen, color, rect);
+        group_width=max(1,chart.width//value_count);
+        zero_y=chart.bottom-int((0.0-min_value)*chart.height/(max_value-min_value)); zero_y=max(chart.y,min(chart.bottom,zero_y));
+        pos=[0.0]*value_count; neg=[0.0]*value_count;
+        for series_index,series in enumerate(self.spec.series):
+            color=self._series_color(series_index);
+            bar_width=max(1,group_width-6) if self.spec.stacked else max(1,(group_width-4)//series_count);
+            for index,value in enumerate(series.values):
+                if self.spec.stacked:
+                    base=pos[index] if value>=0 else neg[index]; top_value=base+value;
+                    if value>=0: pos[index]=top_value;
+                    else: neg[index]=top_value;
+                    y1=chart.bottom-int((base-min_value)*chart.height/(max_value-min_value)); y2=chart.bottom-int((top_value-min_value)*chart.height/(max_value-min_value));
+                    x=chart.x+index*group_width+3;
+                else:
+                    y1=zero_y; y2=chart.bottom-int((value-min_value)*chart.height/(max_value-min_value)); x=chart.x+index*group_width+2+series_index*bar_width;
+                rect=pygame.Rect(x,min(y1,y2),max(1,bar_width-1),max(1,abs(y2-y1))); pygame.draw.rect(screen,color,rect);
+                if self.spec.kind == "bar3d":
+                    depth=max(2,min(7,bar_width//5));
+                    pygame.draw.polygon(screen,color,[(rect.right,rect.top),(rect.right+depth,rect.top-depth),(rect.right+depth,rect.bottom-depth),(rect.right,rect.bottom)]);
+                    pygame.draw.polygon(screen,color,[(rect.left,rect.top),(rect.left+depth,rect.top-depth),(rect.right+depth,rect.top-depth),(rect.right,rect.top)]);
         for index in range(value_count):
-            label = categories[index] if index < len(categories) else str(index + 1);
-            x = chart.x + index * group_width;
-            draw_clipped_text(screen, self.tick_font, label, self.theme.muted, pygame.Rect(x, chart.bottom + 4, group_width, self.tick_font.get_height()), align="center");
+            label=categories[index] if index<len(categories) else str(index+1); x=chart.x+index*group_width;
+            draw_clipped_text(screen,self.tick_font,label,self.theme.muted,pygame.Rect(x,chart.bottom+4,group_width,self.tick_font.get_height()),align="center");
 
     def _draw_horizontal_bar(self, screen):
         chart = self.data_rect();
@@ -347,7 +361,7 @@ class ChartView(ChartBase):
     def draw(self, screen):
         self.draw_frame(screen);
         def draw_inside():
-            if self.spec.kind == "bar":
+            if self.spec.kind in ("bar", "bar3d"):
                 self._draw_bar(screen);
             elif self.spec.kind in ("line", "scatter"):
                 self._draw_line_or_scatter(screen);

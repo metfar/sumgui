@@ -114,7 +114,7 @@ def render_chart_rgba(spec, width, height, theme, renderer="matplotlib"):
         context.__enter__();
     try:
         polar = chart.kind == "radar";
-        axis = figure.add_subplot(111, polar=polar);
+        axis = figure.add_subplot(111, projection="3d") if chart.kind == "bar3d" else figure.add_subplot(111, polar=polar);
         axis.set_facecolor(panel);
         axis.tick_params(colors=muted, labelsize=int(chart.tick_font.size or chart.font.size or 9));
         for spine in getattr(axis, "spines", {}).values():
@@ -123,7 +123,7 @@ def render_chart_rgba(spec, width, height, theme, renderer="matplotlib"):
             axis.grid(True, color=grid, linewidth=0.7, alpha=0.65);
 
         categories = list(chart.categories);
-        if chart.kind == "bar":
+        if chart.kind in ("bar", "bar3d"):
             horizontal = str(chart.option("orientation", "vertical")).lower() in ("horizontal", "h", "hbar");
             series_count = max(1, len(chart.series));
             count = max([len(series.values) for series in chart.series] or [0]);
@@ -142,16 +142,20 @@ def render_chart_rgba(spec, width, height, theme, renderer="matplotlib"):
                     axis.set_yticks(positions[:len(categories)], categories[:count]);
             else:
                 total_width = 0.8;
-                one_width = total_width / series_count;
+                one_width = total_width if chart.stacked else total_width / series_count;
+                bottoms = [0.0] * count;
                 for series_index, series in enumerate(chart.series):
-                    offset = (series_index - (series_count - 1) / 2.0) * one_width;
-                    xs = [position + offset for position in positions[:len(series.values)]];
-                    if sns is not None and series_count == 1:
-                        sns.barplot(x=categories[:len(series.values)] or positions[:len(series.values)], y=list(series.values), color=colors[series_index % len(colors)], ax=axis);
+                    values=list(series.values); color=colors[series_index % len(colors)];
+                    if chart.kind == "bar3d":
+                        xs=positions[:len(values)]; ys=[float(series_index)]*len(values); zs=[bottoms[i] if chart.stacked else 0.0 for i in range(len(values))];
+                        axis.bar3d(xs,ys,zs,[one_width*0.8]*len(values),[0.7]*len(values),values,color=color,shade=True,label=series.name or None);
+                    elif chart.stacked:
+                        xs=positions[:len(values)]; axis.bar(xs,values,width=one_width*0.9,bottom=bottoms[:len(values)],color=color,label=series.name or None);
                     else:
-                        axis.bar(xs, list(series.values), width=one_width * 0.9, color=colors[series_index % len(colors)], label=series.name or None);
-                if categories and not (sns is not None and series_count == 1):
-                    axis.set_xticks(positions[:len(categories)], categories[:count]);
+                        offset=(series_index-(series_count-1)/2.0)*one_width; xs=[position+offset for position in positions[:len(values)]]; axis.bar(xs,values,width=one_width*0.9,color=color,label=series.name or None);
+                    if chart.stacked:
+                        for i,value in enumerate(values): bottoms[i]+=value;
+                if categories and chart.kind != "bar3d": axis.set_xticks(positions[:len(categories)], categories[:count]);
         elif chart.kind in ("line", "scatter"):
             for series_index, series in enumerate(chart.series):
                 xs = list(series.x_values) if series.x_values else list(range(len(series.values)));

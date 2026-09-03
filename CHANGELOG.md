@@ -1,3 +1,7 @@
+# r20 coordinated release
+
+- Aligned with SUM r20 architecture and package versions.
+
 ## 0.2.0a12
 
 - Added optional Agg-based Matplotlib and Seaborn `ChartSpec` renderers without surrendering the SumGUI/Pygame window or event loop.
