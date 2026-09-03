@@ -1,3 +1,10 @@
+## 0.2.0a11
+
+- Fixed modern BASIC DISPLAY color numbers being misread as packed RGB, which made values such as 11, 13 and 15 nearly black.
+- Added SCREEN 13 indexed 256-color rendering and RGB565 handling while preserving classic 0..15 aliases.
+- Strengthened GraphicsWindow event pumping, resize redraw and timed service loops so BASIC PAUSE keeps graphics visible and responsive.
+- Fixed graphical conio/stdio presentation by continuously servicing and redrawing the Pygame text grid while waiting for input and after resize events.
+
 # Changelog
 
 ## 0.2.0a10 - 2026-09-02

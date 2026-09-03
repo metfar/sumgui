@@ -32,12 +32,14 @@ class ConioWindowBackend:
         set_default_icon();
         self.cols=max(1,int(cols)); self.rows=max(1,int(rows)); self.font=pygame.font.SysFont(font_name,max(8,int(font_size))); self.cell_w=max(1,self.font.size("M")[0]); self.cell_h=max(1,self.font.get_linesize());
         self.screen=pygame.display.set_mode((self.cols*self.cell_w,self.rows*self.cell_h),pygame.RESIZABLE); pygame.display.set_caption(str(title));
-        self.x=1; self.y=1; self.fg=conio.LIGHTGRAY; self.bg=conio.BLACK; self.intensity="normal"; self.window_rect=(1,1,self.cols,self.rows); self.keys=deque();
+        self.x=1; self.y=1; self.fg=conio.LIGHTGRAY; self.bg=conio.BLACK; self.intensity="normal"; self.window_rect=(1,1,self.cols,self.rows); self.keys=deque(); self.closed=False; self.clock=pygame.time.Clock();
         self.cells=[[(' ',self.fg,self.bg) for _ in range(self.cols)] for _ in range(self.rows)]; self.render();
     def _bounds(self): x1,y1,x2,y2=self.window_rect; return x1,y1,min(self.cols,x2),min(self.rows,y2);
     def _absolute(self,x=None,y=None):
         x1,y1,_,_=self._bounds(); return x1+(self.x if x is None else int(x))-2,y1+(self.y if y is None else int(y))-2;
-    def render(self):
+    def _draw(self):
+        if self.screen is None or self.closed:
+            return None;
         self.screen.fill(_PALETTE[self.bg&15]);
         for row,line in enumerate(self.cells):
             for col,(ch,fg,bg) in enumerate(line):
@@ -46,6 +48,12 @@ class ConioWindowBackend:
         ax,ay=self._absolute();
         if 0<=ax<self.cols and 0<=ay<self.rows: pygame.draw.line(self.screen,_PALETTE[self.fg&15],(ax*self.cell_w,(ay+1)*self.cell_h-2),((ax+1)*self.cell_w-1,(ay+1)*self.cell_h-2),1);
         pygame.display.flip();
+        return self.screen;
+    def render(self):
+        pump=getattr(pygame.event,"pump",None);
+        if pump is not None:
+            pump();
+        return self._draw();
     def _scroll(self):
         x1,y1,x2,y2=self._bounds();
         for row in range(y1-1,y2-1): self.cells[row][x1-1:x2]=list(self.cells[row+1][x1-1:x2]);
@@ -71,19 +79,29 @@ class ConioWindowBackend:
         self.x=1; self.y=1; self.render();
     def gotoxy(self,x,y): self.x=max(1,int(x)); self.y=max(1,int(y)); self.render();
     def _pump(self):
+        resized=False;
+        resize_types=(getattr(pygame,"VIDEORESIZE",-1),getattr(pygame,"WINDOWRESIZED",-2),getattr(pygame,"WINDOWSIZECHANGED",-3));
         for event in pygame.event.get():
-            if event.type==pygame.QUIT: self.keys.append('\x1b');
+            if event.type==pygame.QUIT:
+                self.closed=True; self.keys.append('\x1b');
             elif event.type==pygame.KEYDOWN:
                 text=getattr(event,'unicode','');
                 if text: self.keys.append(text);
                 elif event.key==pygame.K_ESCAPE: self.keys.append('\x1b');
+            elif event.type in resize_types:
+                size=getattr(event,'size',(getattr(event,'w',self.cols*self.cell_w),getattr(event,'h',self.rows*self.cell_h)));
+                width=max(1,int(getattr(event,'w',size[0]))); height=max(1,int(getattr(event,'h',size[1])));
+                self.screen=pygame.display.set_mode((width,height),pygame.RESIZABLE); resized=True;
+        if resized and not self.closed:
+            self._draw();
+        return not self.closed;
     def getch(self,echo=False):
         while not self.keys:
-            self._pump(); pygame.time.wait(10);
+            self._pump(); self._draw(); self.clock.tick(60);
         ch=self.keys.popleft();
         if echo: self.write(ch);
         return ch;
-    def kbhit(self): self._pump(); return bool(self.keys);
+    def kbhit(self): self._pump(); self._draw(); return bool(self.keys);
     def textcolor(self,color): self.fg=int(color)&15;
     def textbackground(self,color): self.bg=int(color)&15;
     def clreol(self):

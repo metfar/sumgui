@@ -66,6 +66,7 @@ sumgui.egg-info/top_level.txt
 sumgui/tools/__init__.py
 sumgui/tools/gdialog.py
 tests/test_charts_contract.py
+tests/test_conio_contract.py
 tests/test_graphics_window_contract.py
 tests/test_r10_contracts.py
 udg_painter_reborn/3x3.ico

@@ -193,3 +193,19 @@ def test_r17_python_compatibility_examples_and_font_sizes_are_packaged():
     assert "FontSpec(size=10)" in source;
     assert "FontSpec(size=12, bold=True)" in source;
     assert "FontSpec(size=9)" in source;
+
+
+def test_r18_basic_display_keeps_classic_color_aliases_and_screen13_palette(monkeypatch):
+    from sumui import display_mode, screen_mode;
+    module, unused_pygame = _load_graphics(monkeypatch);
+    modern = module.GraphicsSurface(display_mode(8, 8, 65536, palette_profile="basic"));
+    modern.set_ink(11);
+    modern.plot(1, 1);
+    assert modern.point(1, 1)[:3] == module.BASIC16_PALETTE[11];
+    modern.set_ink(0xF800);
+    modern.plot(2, 2);
+    assert modern.point(2, 2)[:3] == (255, 0, 0);
+    mode13 = module.GraphicsSurface(screen_mode(13));
+    mode13.set_ink(200);
+    mode13.plot(3, 3);
+    assert mode13.point(3, 3)[:3] == module.VGA256_PALETTE[200];

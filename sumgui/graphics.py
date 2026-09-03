@@ -25,18 +25,11 @@ import math;
 
 import pygame;
 
-from sumui import ChartSpec, ColorSpec, FontSpec, GraphicsCommand, GraphicsMode, GraphicsProgram, ImageSpec, TableSpec, modern_mode;
+from sumui import BASIC16_PALETTE, VGA256_PALETTE, ChartSpec, ColorSpec, FontSpec, GraphicsCommand, GraphicsMode, GraphicsProgram, ImageSpec, TableSpec, indexed_basic_color, modern_mode;
 
 from .display import fit_window_size;
 
 
-
-BASIC16_PALETTE = (
-    (0, 0, 0), (0, 0, 170), (0, 170, 0), (0, 170, 170),
-    (170, 0, 0), (170, 0, 170), (170, 85, 0), (170, 170, 170),
-    (85, 85, 85), (85, 85, 255), (85, 255, 85), (85, 255, 255),
-    (255, 85, 85), (255, 85, 255), (255, 255, 85), (255, 255, 255),
-);
 
 SPECTRUM_PALETTE = (
     (0, 0, 0), (0, 0, 205), (205, 0, 0), (205, 0, 205),
@@ -107,8 +100,14 @@ class GraphicsSurface:
     def _profile_color(self, value, default=(255, 255, 255)):
         if self.mode.profile == "spectrum" and isinstance(value, int):
             return _spectrum_color(value, self.bright if hasattr(self, "bright") else False);
-        if self.mode.profile in ("basic", "qbasic", "gwbasic") and isinstance(value, int) and 0 <= value < len(BASIC16_PALETTE):
-            return BASIC16_PALETTE[int(value)];
+        if isinstance(value, int):
+            palette_profile = str(self.mode.option("palette_profile", "") or "").strip().lower();
+            if self.mode.profile in ("basic", "qbasic", "gwbasic") or palette_profile == "basic":
+                colors = int(self.mode.option("colors", 16) or 16);
+                try:
+                    return indexed_basic_color(value, colors);
+                except ValueError:
+                    pass;
         return _rgb(value, default);
 
     def clear(self, color=None):
@@ -513,16 +512,40 @@ class GraphicsWindow:
 
     def present(self):
         if not self.pages or self.screen is None or self.closed: return None;
+        pump = getattr(pygame.event, "pump", None);
+        if pump is not None:
+            pump();
         visible=self.pages[self.visible_page]; rect=visible.present(self.screen,smooth=self.smooth); pygame.display.flip(); return rect;
 
     def poll(self):
         if self.screen is None or self.closed: return False;
+        resized=False;
+        resize_types=(getattr(pygame,"VIDEORESIZE",-1),getattr(pygame,"WINDOWRESIZED",-2),getattr(pygame,"WINDOWSIZECHANGED",-3));
         for event in pygame.event.get():
             if event.type==pygame.QUIT: self.closed=True; break;
             if event.type==pygame.KEYDOWN and event.key==pygame.K_ESCAPE: self.closed=True; break;
-            if event.type==getattr(pygame,"VIDEORESIZE",-1):
-                size=getattr(event,"size",(getattr(event,"w",1),getattr(event,"h",1))); width=max(1,int(getattr(event,"w",size[0]))); height=max(1,int(getattr(event,"h",size[1]))); flags=pygame.RESIZABLE if self.mode is None or self.mode.resizable else 0; self.screen=pygame.display.set_mode((width,height),flags);
+            if event.type in resize_types:
+                size=getattr(event,"size",(getattr(event,"w",1),getattr(event,"h",1))); width=max(1,int(getattr(event,"w",size[0]))); height=max(1,int(getattr(event,"h",size[1]))); flags=pygame.RESIZABLE if self.mode is None or self.mode.resizable else 0; self.screen=pygame.display.set_mode((width,height),flags); resized=True;
         if self.closed: self.close(); return False;
+        if resized:
+            self.present();
+        return True;
+
+    def service(self, seconds=0.0, frame_rate=60):
+        if self.screen is None or self.closed:
+            return False;
+        duration=max(0.0,float(seconds));
+        deadline=time.monotonic()+duration;
+        while True:
+            if not self.poll():
+                return True;
+            self.present();
+            if duration <= 0.0 or time.monotonic() >= deadline:
+                break;
+            if self.clock is not None:
+                self.clock.tick(max(1,int(frame_rate)));
+            else:
+                time.sleep(min(1.0/max(1,int(frame_rate)),max(0.0,deadline-time.monotonic())));
         return True;
 
     def wait_for_close(self,frame_rate=60):
