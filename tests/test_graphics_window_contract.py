@@ -163,3 +163,33 @@ def test_basic_mode_uses_qbasic_gwbasic_16_color_palette(monkeypatch):
     surface.set_ink(14);
     surface.plot(1, 1);
     assert surface.point(1, 1)[:3] == module.BASIC16_PALETTE[14];
+
+
+def test_graphics_window_supports_manual_refresh_and_active_visible_pages(monkeypatch):
+    from sumui import GraphicsCommand, display_mode;
+    module, unused_pygame = _load_graphics(monkeypatch);
+    window = module.GraphicsWindow(title="Pages");
+    window.handle(display_mode(320, 240, 256, refresh="manual", pages=3, active_page=1, visible_page=0));
+    assert len(window.pages) == 3;
+    assert window.active_page == 1;
+    assert window.visible_page == 0;
+    assert window.auto_update is False;
+    window.handle(GraphicsCommand("active_page", (2,)));
+    assert window.surface is window.pages[2];
+    window.handle(GraphicsCommand("copy_page", (2, 1)));
+    window.handle(GraphicsCommand("visible_page", (1,)));
+    assert window.visible_page == 1;
+    window.handle(GraphicsCommand("refresh_mode", ("auto",)));
+    assert window.auto_update is True;
+
+
+def test_r17_python_compatibility_examples_and_font_sizes_are_packaged():
+    root = Path(__file__).resolve().parents[1];
+    assert (root / "sumgui" / "bgi.py").exists();
+    assert (root / "sumgui" / "conio.py").exists();
+    assert (root / "examples" / "demo_bgi_compat.py").exists();
+    assert (root / "examples" / "demo_conio_compat.py").exists();
+    source = (root / "examples" / "demo_report_dashboard.py").read_text(encoding="utf-8");
+    assert "FontSpec(size=10)" in source;
+    assert "FontSpec(size=12, bold=True)" in source;
+    assert "FontSpec(size=9)" in source;

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0a10 - 2026-09-02
+
+- Added BGI-compatible arc/ellipse/text/fill primitive rendering without `.BGI` driver files.
+- Added active/visible graphics pages, AUTO/MANUAL presentation, page copy/update and a graphical conio backend.
+- Added BGI/conio/stdio Python examples and compact-font dashboard rendering.
+
 ## 0.2.0a9 - 2026-09-02
 - Added the BASIC-compatible 16-color palette for arbitrary BASIC graphics modes while retaining Spectrum palette semantics for Spectrum profiles.
 - `GraphicsSurface` now captures/restores image regions, flood-fills (`PAINT`/`FILL`), saves/loads images, and consumes shared image/table/chart commands.

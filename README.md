@@ -359,4 +359,12 @@ The graphical presentation uses the active Sum theme by default, including the e
 
 Graphical presentations of Sum applications also provide a common **File → Export graphical window as PNG...** action through the shared application model. This applies to `sumedit --gui`, `sumide --gui`, `sumx --gui` and language IDEs derived from the same application.
 
+## r17 BGI/conio and page-buffering support
+
+sumGUI now renders the shared BGI-compatible primitive stream without using real `.BGI` files. The supported compatibility subset includes initialization/close, pixels, lines, rectangles, circles, arcs, ellipses, flood fill, filled bars and positioned text. `sumgui.conio.install()` provides a graphical text-grid backend for the common `sumui.conio` API.
+
+`GraphicsWindow` now distinguishes active and visible pages. AUTO mode presents drawing commands immediately when the active page is visible; MANUAL mode waits for an explicit update. Page switching/copying supports classic double-buffer style programs while modern arbitrary-resolution displays remain available.
+
+`FontSpec` is honored globally and by tables/charts. `examples/demo_report_dashboard.py` deliberately uses compact 10/12/9 point body/title/tick fonts. New Python examples demonstrate BGI, conio and stdio compatibility.
+
 <p align=center><b>- oOo -<b></p>

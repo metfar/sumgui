@@ -35,9 +35,14 @@ def _nice_number(value):
 
 
 class ChartBase(Widget):
-    def __init__(self, rect, font, title="", x_label="", y_label="", theme=None, focusable=False, tab_index=0):
+    def __init__(self, rect, font, title="", x_label="", y_label="", theme=None, focusable=False, tab_index=0, fonts=None):
         super().__init__(rect, focusable=focusable, tab_index=tab_index);
         self.font = font;
+        fonts = dict(fonts or {});
+        self.title_font = fonts.get("title", font);
+        self.axis_font = fonts.get("axis", font);
+        self.tick_font = fonts.get("tick", font);
+        self.legend_font = fonts.get("legend", font);
         self.title = title;
         self.x_label = x_label;
         self.y_label = y_label;
@@ -60,7 +65,7 @@ class ChartBase(Widget):
         pygame.draw.rect(screen, self.theme.panel, self.rect, border_radius=8);
         pygame.draw.rect(screen, self.theme.cursor if self.has_focus else self.theme.line, self.rect, 3 if self.has_focus else 2, border_radius=8);
         if self.title:
-            draw_clipped_text(screen, self.font, self.title, self.theme.text, pygame.Rect(self.rect.x + 8, self.rect.y + 6, self.rect.width - 16, self.font.get_height()));
+            draw_clipped_text(screen, self.title_font, self.title, self.theme.text, pygame.Rect(self.rect.x + 8, self.rect.y + 6, self.rect.width - 16, self.title_font.get_height()));
 
     def draw_axes(self, screen, chart, min_x, max_x, min_y, max_y, x_ticks=3, y_ticks=3):
         pygame.draw.line(screen, self.theme.line, (chart.x, chart.bottom), (chart.right, chart.bottom), 1);
@@ -71,18 +76,18 @@ class ChartBase(Widget):
                 y = chart.bottom - int(fraction * chart.height);
                 value = min_y + fraction * (max_y - min_y);
                 pygame.draw.line(screen, self.theme.line, (chart.x - 3, y), (chart.right, y), 1);
-                draw_clipped_text(screen, self.font, _nice_number(value), self.theme.muted, pygame.Rect(self.rect.x + 4, y - self.font.get_height() // 2, chart.x - self.rect.x - 8, self.font.get_height()), align="right");
+                draw_clipped_text(screen, self.tick_font, _nice_number(value), self.theme.muted, pygame.Rect(self.rect.x + 4, y - self.tick_font.get_height() // 2, chart.x - self.rect.x - 8, self.tick_font.get_height()), align="right");
         if x_ticks > 1:
             for index in range(x_ticks):
                 fraction = index / (x_ticks - 1);
                 x = chart.x + int(fraction * chart.width);
                 value = min_x + fraction * (max_x - min_x);
                 pygame.draw.line(screen, self.theme.line, (x, chart.bottom), (x, chart.bottom + 3), 1);
-                draw_clipped_text(screen, self.font, _nice_number(value), self.theme.muted, pygame.Rect(x - 20, chart.bottom + 4, 40, self.font.get_height()), align="center");
+                draw_clipped_text(screen, self.tick_font, _nice_number(value), self.theme.muted, pygame.Rect(x - 20, chart.bottom + 4, 40, self.tick_font.get_height()), align="center");
         if self.x_label:
-            draw_clipped_text(screen, self.font, self.x_label, self.theme.text, pygame.Rect(chart.x, self.rect.bottom - self.font.get_height() - 4, chart.width, self.font.get_height()), align="center");
+            draw_clipped_text(screen, self.axis_font, self.x_label, self.theme.text, pygame.Rect(chart.x, self.rect.bottom - self.axis_font.get_height() - 4, chart.width, self.axis_font.get_height()), align="center");
         if self.y_label:
-            draw_clipped_text(screen, self.font, self.y_label, self.theme.text, pygame.Rect(self.rect.x + 6, self.rect.y + 26, chart.x - self.rect.x - 10, self.font.get_height()), align="center");
+            draw_clipped_text(screen, self.axis_font, self.y_label, self.theme.text, pygame.Rect(self.rect.x + 6, self.rect.y + 26, chart.x - self.rect.x - 10, self.axis_font.get_height()), align="center");
 
     def draw_tooltip(self, screen):
         if self.tooltip is None:
@@ -121,11 +126,11 @@ class ChartBase(Widget):
 class ChartView(ChartBase):
     """Render one backend-neutral sumui.ChartSpec through Pygame.""";
 
-    def __init__(self, rect, spec, font, theme=None, focusable=False, tab_index=0):
+    def __init__(self, rect, spec, font, theme=None, focusable=False, tab_index=0, fonts=None):
         self.spec = coerce_chart_spec(spec);
         super().__init__(
             rect, font, self.spec.title, self.spec.x_axis.label, self.spec.y_axis.label,
-            theme=theme, focusable=focusable, tab_index=tab_index,
+            theme=theme, focusable=focusable, tab_index=tab_index, fonts=fonts,
         );
 
     def set_spec(self, spec):
@@ -186,7 +191,7 @@ class ChartView(ChartBase):
         for index in range(value_count):
             label = categories[index] if index < len(categories) else str(index + 1);
             x = chart.x + index * group_width;
-            draw_clipped_text(screen, self.font, label, self.theme.muted, pygame.Rect(x, chart.bottom + 4, group_width, self.font.get_height()), align="center");
+            draw_clipped_text(screen, self.tick_font, label, self.theme.muted, pygame.Rect(x, chart.bottom + 4, group_width, self.tick_font.get_height()), align="center");
 
     def _draw_horizontal_bar(self, screen):
         chart = self.data_rect();
@@ -217,13 +222,13 @@ class ChartView(ChartBase):
         for index in range(value_count):
             label = categories[index] if index < len(categories) else str(index + 1);
             y = chart.y + index * group_height;
-            draw_clipped_text(screen, self.font, label, self.theme.muted, pygame.Rect(self.rect.x + 4, y, max(1, chart.x - self.rect.x - 8), group_height), align="right", valign="middle");
+            draw_clipped_text(screen, self.tick_font, label, self.theme.muted, pygame.Rect(self.rect.x + 4, y, max(1, chart.x - self.rect.x - 8), group_height), align="right", valign="middle");
         for index in range(3):
             fraction = index / 2.0;
             x = chart.x + int(fraction * chart.width);
             value = min_value + fraction * (max_value - min_value);
             pygame.draw.line(screen, self.theme.line, (x, chart.bottom), (x, chart.bottom + 3), 1);
-            draw_clipped_text(screen, self.font, _nice_number(value), self.theme.muted, pygame.Rect(x - 24, chart.bottom + 4, 48, self.font.get_height()), align="center");
+            draw_clipped_text(screen, self.tick_font, _nice_number(value), self.theme.muted, pygame.Rect(x - 24, chart.bottom + 4, 48, self.tick_font.get_height()), align="center");
 
     def _draw_radar(self, screen):
         if not self.spec.series:
@@ -252,7 +257,7 @@ class ChartView(ChartBase):
             label = categories[index] if index < len(categories) else str(index + 1);
             lx = center[0] + int(math.cos(angle) * (radius + 18));
             ly = center[1] + int(math.sin(angle) * (radius + 18));
-            draw_clipped_text(screen, self.font, label, self.theme.text, pygame.Rect(lx - 38, ly - self.font.get_height() // 2, 76, self.font.get_height()), align="center");
+            draw_clipped_text(screen, self.tick_font, label, self.theme.text, pygame.Rect(lx - 38, ly - self.tick_font.get_height() // 2, 76, self.tick_font.get_height()), align="center");
         mapped = [];
         for index, value in enumerate(values):
             fraction = max(0.0, min(1.0, (float(value) - minimum) / (maximum - minimum)));
@@ -273,7 +278,7 @@ class ChartView(ChartBase):
             for index, label in enumerate(self.spec.categories):
                 fraction = index / max(1, count - 1);
                 x = chart.x + int(fraction * chart.width);
-                draw_clipped_text(screen, self.font, str(label), self.theme.muted, pygame.Rect(x - 40, chart.bottom + 4, 80, self.font.get_height()), align="center");
+                draw_clipped_text(screen, self.tick_font, str(label), self.theme.muted, pygame.Rect(x - 40, chart.bottom + 4, 80, self.tick_font.get_height()), align="center");
         for series_index, series in enumerate(self.spec.series):
             color = self.theme.palette[series_index % len(self.theme.palette)] if self.theme.palette else self.theme.cursor;
             mapped = [self.map_point(chart, x, y, min_x, max_x, min_y, max_y) for x, y in series.points];
@@ -318,12 +323,12 @@ class ChartView(ChartBase):
         x = self.rect.right - 8;
         y = self.rect.y + 6;
         for label, index in reversed(labels[:6]):
-            text_width = self.font.size(label)[0] if self.font is not None else len(label) * 8;
+            text_width = self.legend_font.size(label)[0] if self.legend_font is not None else len(label) * 8;
             width = min(self.rect.width // 2, text_width + 20);
             x -= width;
             color = self.theme.palette[index % len(self.theme.palette)] if self.theme.palette else self.theme.button;
             pygame.draw.rect(screen, color, pygame.Rect(x, y + 3, 10, 10));
-            draw_clipped_text(screen, self.font, label, self.theme.text, pygame.Rect(x + 14, y, max(1, width - 14), self.font.get_height()));
+            draw_clipped_text(screen, self.legend_font, label, self.theme.text, pygame.Rect(x + 14, y, max(1, width - 14), self.legend_font.get_height()));
             x -= 8;
 
     def draw(self, screen):
@@ -363,9 +368,9 @@ class BarChart(ChartBase):
                 y = chart.bottom - h;
                 rect = pygame.Rect(x + 3, y, max(1, bar_w - 6), h);
                 pygame.draw.rect(screen, self.theme.button, rect);
-                draw_clipped_text(screen, self.font, str(label), self.theme.muted, pygame.Rect(x + 3, chart.bottom + 4, max(1, bar_w - 6), self.font.get_height()), align="center");
+                draw_clipped_text(screen, self.tick_font, str(label), self.theme.muted, pygame.Rect(x + 3, chart.bottom + 4, max(1, bar_w - 6), self.tick_font.get_height()), align="center");
             if self.x_label:
-                draw_clipped_text(screen, self.font, self.x_label, self.theme.text, pygame.Rect(chart.x, self.rect.bottom - self.font.get_height() - 4, chart.width, self.font.get_height()), align="center");
+                draw_clipped_text(screen, self.axis_font, self.x_label, self.theme.text, pygame.Rect(chart.x, self.rect.bottom - self.axis_font.get_height() - 4, chart.width, self.axis_font.get_height()), align="center");
         with_clip(screen, self.rect.inflate(-4, -4), draw_inside);
 
 
