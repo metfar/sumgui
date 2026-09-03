@@ -1,3 +1,10 @@
+## 0.2.0a12
+
+- Added optional Agg-based Matplotlib and Seaborn `ChartSpec` renderers without surrendering the SumGUI/Pygame window or event loop.
+- Improved chart-series contrast and added a legible report-dashboard palette plus native/Matplotlib/Seaborn variants.
+- Direct SumGUI examples and UDG Painter now install the project-owned Sigma icon by default.
+- Added interruptible graphics pause handling for keyboard, mouse and touch while continuing redraw/resize processing.
+
 ## 0.2.0a11
 
 - Fixed modern BASIC DISPLAY color numbers being misread as packed RGB, which made values such as 11, 13 and 15 nearly black.

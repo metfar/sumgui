@@ -89,6 +89,8 @@ def _pygame_stub():
     pygame.KEYDOWN = 11;
     pygame.K_ESCAPE = 27;
     pygame.VIDEORESIZE = 12;
+    pygame.MOUSEBUTTONDOWN = 13;
+    pygame.FINGERDOWN = 14;
     pygame.error = RuntimeError;
     pygame.Rect = FakeRect;
     pygame.Surface = FakeSurface;
@@ -209,3 +211,21 @@ def test_r18_basic_display_keeps_classic_color_aliases_and_screen13_palette(monk
     mode13.set_ink(200);
     mode13.plot(3, 3);
     assert mode13.point(3, 3)[:3] == module.VGA256_PALETTE[200];
+
+
+def test_r19_graphics_pause_is_interrupted_by_mouse_or_touch_and_keeps_display_live(monkeypatch):
+    module, pygame = _load_graphics(monkeypatch);
+    window = module.GraphicsWindow(title="Pause");
+    window.handle(basic_mode(64,48));
+    events = [types.SimpleNamespace(type=pygame.MOUSEBUTTONDOWN, button=1, pos=(10,10))];
+    pygame.event.get = lambda: events[:] if events else [];
+    assert window.pause(10.0) is True;
+    events[:] = [types.SimpleNamespace(type=pygame.FINGERDOWN, x=.5, y=.5)];
+    assert window.pause(10.0) is True;
+
+def test_r19_examples_set_sum_sigma_icon_before_direct_pygame_windows():
+    root = Path(__file__).resolve().parents[1] / "examples";
+    for path in root.rglob("*.py"):
+        text = path.read_text(encoding="utf-8");
+        if "pygame.display.set_mode" in text:
+            assert "set_default_icon" in text, path.name;

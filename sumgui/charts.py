@@ -140,6 +140,19 @@ class ChartView(ChartBase):
         self.y_label = self.spec.y_axis.label;
         return self;
 
+    def _series_color(self, index):
+        explicit = self.spec.option("series_colors", None);
+        if explicit:
+            colors = list(explicit);
+            if colors:
+                return colors[int(index) % len(colors)];
+        if self.theme.palette:
+            panel = tuple(self.theme.panel[:3]);
+            visible = [color for color in self.theme.palette if sum(abs(int(color[channel]) - int(panel[channel])) for channel in range(3)) >= 180];
+            colors = visible or list(self.theme.palette);
+            return colors[int(index) % len(colors)];
+        return self.theme.button;
+
     def _bounds(self):
         points = [];
         for series in self.spec.series:
@@ -180,7 +193,7 @@ class ChartView(ChartBase):
         zero_y = chart.bottom - int((0.0 - min_value) * chart.height / (max_value - min_value));
         zero_y = max(chart.y, min(chart.bottom, zero_y));
         for series_index, series in enumerate(self.spec.series):
-            color = self.theme.palette[series_index % len(self.theme.palette)] if self.theme.palette else self.theme.button;
+            color = self._series_color(series_index);
             for index, value in enumerate(series.values):
                 x = chart.x + index * group_width + 2 + series_index * bar_width;
                 y_value = chart.bottom - int((value - min_value) * chart.height / (max_value - min_value));
@@ -211,7 +224,7 @@ class ChartView(ChartBase):
         zero_x = chart.x + int((0.0 - min_value) * chart.width / (max_value - min_value));
         zero_x = max(chart.x, min(chart.right, zero_x));
         for series_index, series in enumerate(self.spec.series):
-            color = self.theme.palette[series_index % len(self.theme.palette)] if self.theme.palette else self.theme.button;
+            color = self._series_color(series_index);
             for index, value in enumerate(series.values):
                 y = chart.y + index * group_height + 2 + series_index * bar_height;
                 value_x = chart.x + int((value - min_value) * chart.width / (max_value - min_value));
@@ -263,7 +276,7 @@ class ChartView(ChartBase):
             fraction = max(0.0, min(1.0, (float(value) - minimum) / (maximum - minimum)));
             angle = axes[index][2];
             mapped.append((center[0] + int(math.cos(angle) * radius * fraction), center[1] + int(math.sin(angle) * radius * fraction)));
-        color = self.theme.palette[0] if self.theme.palette else self.theme.cursor;
+        color = self._series_color(0);
         pygame.draw.polygon(screen, color, mapped, 3);
         for point in mapped:
             pygame.draw.circle(screen, color, point, 4);
@@ -305,7 +318,7 @@ class ChartView(ChartBase):
             for step in range(steps + 1):
                 current = start + angle * step / steps;
                 points.append((center[0] + int(math.cos(current) * radius), center[1] + int(math.sin(current) * radius)));
-            color = self.theme.palette[index % len(self.theme.palette)] if self.theme.palette else self.theme.button;
+            color = self._series_color(index);
             pygame.draw.polygon(screen, color, points);
             start += angle;
         pygame.draw.circle(screen, self.theme.line, center, radius, 2);
@@ -326,7 +339,7 @@ class ChartView(ChartBase):
             text_width = self.legend_font.size(label)[0] if self.legend_font is not None else len(label) * 8;
             width = min(self.rect.width // 2, text_width + 20);
             x -= width;
-            color = self.theme.palette[index % len(self.theme.palette)] if self.theme.palette else self.theme.button;
+            color = self._series_color(index);
             pygame.draw.rect(screen, color, pygame.Rect(x, y + 3, 10, 10));
             draw_clipped_text(screen, self.legend_font, label, self.theme.text, pygame.Rect(x + 14, y, max(1, width - 14), self.legend_font.get_height()));
             x -= 8;

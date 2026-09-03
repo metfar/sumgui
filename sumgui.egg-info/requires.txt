@@ -1,2 +1,13 @@
-sumui>=0.1.0a9
+sumui>=0.1.0a10
 pygame>=2.0
+
+[charts]
+matplotlib>=3.7
+seaborn>=0.13
+
+[matplotlib]
+matplotlib>=3.7
+
+[seaborn]
+matplotlib>=3.7
+seaborn>=0.13

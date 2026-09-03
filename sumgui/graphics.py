@@ -279,6 +279,14 @@ class GraphicsSurface:
             pygame.font.init();
         chart_spec = spec if isinstance(spec, ChartSpec) else ChartSpec.from_dict(spec);
         active_theme = theme or DEFAULT_THEME;
+        renderer = str(chart_spec.option("renderer", "native") or "native").strip().lower();
+        if renderer in ("matplotlib", "mpl", "seaborn", "sns"):
+            from .chart_backends import render_chart_rgba;
+            backend = "seaborn" if renderer in ("seaborn", "sns") else "matplotlib";
+            rendered_width, rendered_height, rgba = render_chart_rgba(chart_spec, int(width), int(height), active_theme, renderer=backend);
+            image = pygame.image.fromstring(rgba, (rendered_width, rendered_height), "RGBA");
+            self.surface.blit(image, (int(x), int(y)));
+            return self;
         automatic_size = max(9, min(18, int(height) // 14 if int(height) > 0 else 12));
         base_spec = chart_spec.font.merged(self.font_spec, default_family=active_theme.font_name, default_size=automatic_size);
         base_font = self._pygame_font(base_spec, default_size=automatic_size, theme=active_theme);
@@ -546,6 +554,47 @@ class GraphicsWindow:
                 self.clock.tick(max(1,int(frame_rate)));
             else:
                 time.sleep(min(1.0/max(1,int(frame_rate)),max(0.0,deadline-time.monotonic())));
+        return True;
+
+    def pause(self, seconds=0.0, frame_rate=60):
+        """Wait until timeout or any keyboard, mouse or touch press.
+
+        ``seconds == 0`` waits indefinitely. The display remains responsive,
+        resize events are honored and the visible page is continuously
+        presented. Returns True when input/close interrupted the wait and
+        False when a finite timeout elapsed.
+        """;
+        if self.screen is None or self.closed:
+            return True;
+        duration=max(0.0,float(seconds));
+        deadline=None if duration==0.0 else time.monotonic()+duration;
+        resize_types=(getattr(pygame,"VIDEORESIZE",-1),getattr(pygame,"WINDOWRESIZED",-2),getattr(pygame,"WINDOWSIZECHANGED",-3));
+        input_types=(getattr(pygame,"KEYDOWN",-10),getattr(pygame,"MOUSEBUTTONDOWN",-11),getattr(pygame,"FINGERDOWN",-12));
+        while not self.closed:
+            resized=False;
+            for event in pygame.event.get():
+                if event.type==pygame.QUIT:
+                    self.closed=True;
+                    self.close();
+                    return True;
+                if event.type in input_types:
+                    self.present();
+                    return True;
+                if event.type in resize_types:
+                    size=getattr(event,"size",(getattr(event,"w",1),getattr(event,"h",1)));
+                    width=max(1,int(getattr(event,"w",size[0])));
+                    height=max(1,int(getattr(event,"h",size[1])));
+                    flags=pygame.RESIZABLE if self.mode is None or self.mode.resizable else 0;
+                    self.screen=pygame.display.set_mode((width,height),flags);
+                    resized=True;
+            if resized or not self.closed:
+                self.present();
+            if deadline is not None and time.monotonic()>=deadline:
+                return False;
+            if self.clock is not None:
+                self.clock.tick(max(1,int(frame_rate)));
+            else:
+                time.sleep(1.0/max(1,int(frame_rate)));
         return True;
 
     def wait_for_close(self,frame_rate=60):

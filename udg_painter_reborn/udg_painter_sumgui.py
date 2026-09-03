@@ -36,7 +36,7 @@ try:
 except ImportError:
     Image = None;
 
-from sumgui import Button, Panel, Widget, get_events, enable_key_repeat, make_theme;
+from sumgui import Button, Panel, Widget, get_events, enable_key_repeat, make_theme, set_default_icon;
 from sumgui.dialogs import message_box;
 from sumgui.widgets import draw_clipped_text;
 
@@ -1158,6 +1158,7 @@ class UDGApp:
     def __init__(self):
         pygame.init();
         enable_key_repeat(250, 31);
+        set_default_icon();
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT));
         pygame.display.set_caption("Spectrum UDG Painter");
         self.clock = pygame.time.Clock();

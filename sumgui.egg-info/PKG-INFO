@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: sumgui
-Version: 0.2.0a11
+Version: 0.2.0a12
 Summary: A tiny retro-flavored GUI toolkit for Pygame.
 Author: William Martinez Bas
 Author-email: William Martinez Bas <metfar@gmail.com>
@@ -13,8 +13,16 @@ Classifier: Topic :: Software Development :: User Interfaces
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: sumui>=0.1.0a9
+Requires-Dist: sumui>=0.1.0a10
 Requires-Dist: pygame>=2.0
+Provides-Extra: matplotlib
+Requires-Dist: matplotlib>=3.7; extra == "matplotlib"
+Provides-Extra: seaborn
+Requires-Dist: matplotlib>=3.7; extra == "seaborn"
+Requires-Dist: seaborn>=0.13; extra == "seaborn"
+Provides-Extra: charts
+Requires-Dist: matplotlib>=3.7; extra == "charts"
+Requires-Dist: seaborn>=0.13; extra == "charts"
 Dynamic: author
 Dynamic: license-file
 Dynamic: requires-python
@@ -387,5 +395,10 @@ sumGUI now renders the shared BGI-compatible primitive stream without using real
 `GraphicsWindow` now distinguishes active and visible pages. AUTO mode presents drawing commands immediately when the active page is visible; MANUAL mode waits for an explicit update. Page switching/copying supports classic double-buffer style programs while modern arbitrary-resolution displays remain available.
 
 `FontSpec` is honored globally and by tables/charts. `examples/demo_report_dashboard.py` deliberately uses compact 10/12/9 point body/title/tick fonts. New Python examples demonstrate BGI, conio and stdio compatibility.
+## Shared ChartSpec renderers
+
+The native Pygame chart renderer remains the default. Optional Matplotlib and Seaborn adapters render the same backend-neutral `sumui.ChartSpec` through Agg and then place the resulting pixels inside the SumGUI/Pygame surface. This preserves the Sum window, event loop and project-owned `Σ` icon. Install `sumgui[matplotlib]`, `sumgui[seaborn]`, or `sumgui[charts]` when those renderers are wanted.
+
+The report dashboard is available in three equivalent examples: `demo_report_dashboard_native.py`, `demo_report_dashboard_matplotlib.py`, and `demo_report_dashboard_seaborn.py`.
 
 <p align=center><b>- oOo -<b></p>

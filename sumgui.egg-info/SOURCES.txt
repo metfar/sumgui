@@ -22,6 +22,9 @@ examples/demo_full.py
 examples/demo_market_dashboard.py
 examples/demo_quick_start.py
 examples/demo_report_dashboard.py
+examples/demo_report_dashboard_matplotlib.py
+examples/demo_report_dashboard_native.py
+examples/demo_report_dashboard_seaborn.py
 examples/demo_shared_chart_spec.py
 examples/demo_stdio_compat.py
 examples/demo_sumgui_dzhanibekov_st.py
@@ -40,6 +43,7 @@ examples/components/demo_textinput.py
 sumgui/__init__.py
 sumgui/application_backend.py
 sumgui/bgi.py
+sumgui/chart_backends.py
 sumgui/charts.py
 sumgui/clipboard.py
 sumgui/commands.py
