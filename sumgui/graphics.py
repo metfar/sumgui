@@ -25,7 +25,7 @@ import math;
 
 import pygame;
 
-from sumui import BASIC16_PALETTE, VGA256_PALETTE, ChartSpec, ColorSpec, FontSpec, GraphicsCommand, GraphicsMode, GraphicsProgram, ImageSpec, TableSpec, indexed_basic_color, modern_mode;
+from sumui import BASIC16_PALETTE, VGA256_PALETTE, BorderPattern, ChartSpec, ColorSpec, FontSpec, GraphicsCommand, GraphicsMode, GraphicsProgram, ImageSpec, LayerStack, TableSpec, indexed_basic_color, modern_mode, normalize_layer_name;
 
 from .display import fit_window_size;
 
@@ -70,11 +70,17 @@ class GraphicsSurface:
     """;
     def __init__(self, mode=None, background=(0, 0, 0, 255)):
         self.mode = mode if isinstance(mode, GraphicsMode) else (GraphicsMode.from_dict(mode) if mode is not None else modern_mode(640, 480));
-        flags = pygame.SRCALPHA if self.mode.pixel_format in ("rgba", "rgba32", "argb32") else 0;
-        self.surface = pygame.Surface(self.mode.size, flags);
+        # r20.2 keeps the drawable GRAPHICS plane transparent and composes it
+        # with the BACKGROUND plane at presentation/capture time.  This makes
+        # layer ordering meaningful without changing program coordinates.
+        self.surface = pygame.Surface(self.mode.size, pygame.SRCALPHA);
         self.background = self._profile_color(background, default=(0, 0, 0, 255));
         self.foreground = self._profile_color(7 if self.mode.profile == "spectrum" else (255, 255, 255), default=(255, 255, 255));
         self.border = self.background;
+        self.border_ink = self.foreground;
+        self.border_paper = self.border;
+        self.border_pattern = None;
+        self.layers = LayerStack();
         self.bright = False;
         self.flash = False;
         self.inverse = False;
@@ -111,8 +117,31 @@ class GraphicsSurface:
         return _rgb(value, default);
 
     def clear(self, color=None):
-        self.surface.fill(self._profile_color(self.background if color is None else color, (0, 0, 0, 255)));
+        if color is not None:
+            self.background = self._profile_color(color, (0, 0, 0, 255));
+        self.surface.fill((0, 0, 0, 0));
         return self;
+
+    def clear_layer(self, name):
+        layer = normalize_layer_name(name);
+        if layer == "GRAPHICS": self.surface.fill((0, 0, 0, 0));
+        # BACKGROUND and BORDER are stateful fills: clearing them means
+        # repainting with their currently selected color/pattern. TEXT belongs
+        # to the separate text-grid backend and is cleared by that backend.
+        return self;
+
+    def sort_layers(self, names, direction="ASC"):
+        return self.layers.sort(names, direction=direction);
+
+    def _content_surface(self):
+        content = pygame.Surface(self.mode.size, pygame.SRCALPHA);
+        content.fill((0, 0, 0, 0));
+        for layer in self.layers.order:
+            if layer == "BACKGROUND":
+                content.fill(self.background);
+            elif layer == "GRAPHICS":
+                content.blit(self.surface, (0, 0));
+        return content;
 
     def plot(self, x, y, color=None):
         x = int(round(x)); y = int(round(y));
@@ -123,7 +152,19 @@ class GraphicsSurface:
     def point(self, x, y):
         x = int(round(x)); y = int(round(y));
         if 0 <= x < self.width and 0 <= y < self.height:
-            return tuple(self.surface.get_at((x, y)));
+            # Resolve the visible pixel directly from the z-stack.  Besides
+            # being cheaper than allocating a composed surface for POINT(),
+            # this keeps the semantic contract testable with lightweight
+            # surface backends that do not implement alpha-aware blitting.
+            visible = (0, 0, 0, 0);
+            raw = tuple(self.surface.get_at((x, y)));
+            raw_alpha = raw[3] if len(raw) > 3 else 255;
+            for layer in self.layers.order:
+                if layer == "BACKGROUND":
+                    visible = tuple(self.background);
+                elif layer == "GRAPHICS" and raw_alpha:
+                    visible = raw;
+            return visible;
         return None;
 
     def line(self, x1, y1, x2, y2, color=None, width=1):
@@ -191,7 +232,7 @@ class GraphicsSurface:
         return self;
 
     def blit(self, image, x=0, y=0):
-        target = image.surface if isinstance(image, GraphicsSurface) else image;
+        target = image._content_surface() if isinstance(image, GraphicsSurface) else image;
         self.surface.blit(target, (int(round(x)), int(round(y))));
         return self;
 
@@ -210,7 +251,7 @@ class GraphicsSurface:
         rect = pygame.Rect(x, y, max(0, width), max(0, height)).clip(self.surface.get_rect());
         if rect.width <= 0 or rect.height <= 0:
             raise ValueError("capture region is outside the graphics surface");
-        region = self.surface.subsurface(rect).copy();
+        region = self._content_surface().subsurface(rect).copy();
         pixels = pygame.image.tostring(region, "RGBA");
         return ImageSpec(rect.width, rect.height, pixels, "rgba32", (("source_x", rect.x), ("source_y", rect.y)));
 
@@ -260,7 +301,7 @@ class GraphicsSurface:
         return self;
 
     def save_image(self, filename, image=None):
-        target = self.surface if image is None else self._surface_from_image(image);
+        target = self._content_surface() if image is None else self._surface_from_image(image);
         pygame.image.save(target, str(filename));
         return str(filename);
 
@@ -332,6 +373,38 @@ class GraphicsSurface:
 
     def set_border(self, value):
         self.border = self._profile_color(value, (0, 0, 0));
+        self.border_paper = self.border;
+        self.border_pattern = None;
+        return self;
+
+    def set_border_ink(self, value):
+        self.border_ink = self._profile_color(value, (255, 255, 255));
+        if self.border_pattern is not None: self.border_pattern.ink = self.border_ink;
+        return self;
+
+    def set_border_paper(self, value):
+        self.border_paper = self._profile_color(value, (0, 0, 0));
+        if self.border_pattern is not None: self.border_pattern.paper = self.border_paper;
+        return self;
+
+    def set_border_pattern(self, rows):
+        if rows is None:
+            self.border_pattern = None;
+            return self;
+        pattern = rows if isinstance(rows, BorderPattern) else BorderPattern(tuple(rows), ink=self.border_ink, paper=self.border_paper);
+        pattern.ink = self.border_ink;
+        pattern.paper = self.border_paper;
+        self.border_pattern = pattern;
+        return self;
+
+    def set_border_offset(self, x=0, y=0):
+        if self.border_pattern is not None:
+            self.border_pattern.offset_x = int(x);
+            self.border_pattern.offset_y = int(y);
+        return self;
+
+    def scroll_border(self, dx=0, dy=0):
+        if self.border_pattern is not None: self.border_pattern.scroll(dx, dy);
         return self;
 
     def set_bright(self, value):
@@ -388,6 +461,23 @@ class GraphicsSurface:
             return self.set_paper(args[0]);
         if op == "border":
             return self.set_border(args[0]);
+        if op == "border_ink":
+            return self.set_border_ink(args[0]);
+        if op == "border_paper":
+            return self.set_border_paper(args[0]);
+        if op == "border_pattern":
+            return self.set_border_pattern(args[0] if args else None);
+        if op == "border_offset":
+            return self.set_border_offset(args[0], args[1]);
+        if op == "border_scroll":
+            return self.scroll_border(args[0], args[1]);
+        if op == "sort_layers":
+            names = args[0] if args else ();
+            direction = args[1] if len(args) > 1 else "ASC";
+            self.sort_layers(names, direction);
+            return self;
+        if op == "clear_layer":
+            return self.clear_layer(args[0]);
         if op == "bright":
             return self.set_bright(args[0]);
         if op == "flash":
@@ -426,14 +516,32 @@ class GraphicsSurface:
             height = max(1, int(round(self.height * scale)));
         return pygame.Rect((target_width - width) // 2, (target_height - height) // 2, width, height);
 
+    def _paint_border(self, target):
+        target.fill(self.border[:3] if len(self.border) >= 3 else self.border);
+        pattern = self.border_pattern;
+        if pattern is None: return target;
+        tile = pygame.Surface((8, 8));
+        for py in range(8):
+            for px in range(8):
+                bit = (pattern.rows[py] >> (7 - px)) & 1;
+                color = pattern.ink if bit else pattern.paper;
+                tile.set_at((px, py), color[:3] if hasattr(color, "__len__") else self._profile_color(color)[:3]);
+        width, height = target.get_size();
+        start_x = -(pattern.offset_x & 7);
+        start_y = -(pattern.offset_y & 7);
+        for y in range(start_y, height, 8):
+            for x in range(start_x, width, 8): target.blit(tile, (x, y));
+        return target;
+
     def present(self, target, smooth=False):
         rect = self.destination_rect(target.get_size());
-        if rect.size == self.surface.get_size():
-            scaled = self.surface;
+        content = self._content_surface();
+        if rect.size == content.get_size():
+            scaled = content;
         else:
             scaler = pygame.transform.smoothscale if smooth and self.mode.scaling != "integer" else pygame.transform.scale;
-            scaled = scaler(self.surface, rect.size);
-        target.fill(self.border[:3] if len(self.border) >= 3 else self.border);
+            scaled = scaler(content, rect.size);
+        self._paint_border(target);
         target.blit(scaled, rect.topleft);
         return rect;
 

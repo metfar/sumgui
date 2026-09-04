@@ -26,7 +26,7 @@
 # before the top-level package has forced pygame to load.
 import pygame;
 
-__version__ = "0.2.0a14";
+__version__ = "0.2.0a15";
 
 from .contracts import GUI_BACKEND, backend_capabilities;
 from .eventbridge import event_to_common, touch_to_mouse_event;
@@ -48,3 +48,5 @@ from .commands import command_help, command_list;
 from .voxel import Voxel, VoxelFace, VoxelGridModel, VoxelGridWidgetSpec;
 
 from .keyrepeat import DOS_FAST_DELAY_MS, DOS_FAST_INTERVAL_MS, KeyRepeatConfig, disable_key_repeat, enable_key_repeat, get_events, process_key_repeat;
+
+from .textscreen import GuiTextScreen;

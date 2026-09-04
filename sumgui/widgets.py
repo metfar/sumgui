@@ -24,6 +24,7 @@
 import pygame;
 from .theme import C64_COLORS, DEFAULT_THEME, DOS_COLORS, SPECTRUM_COLORS;
 from .clipboard import get_clipboard_text, set_clipboard_text;
+from sumui import CursorState, coerce_cursor_state;
 
 
 def with_clip(screen, rect, draw_func):
@@ -1258,6 +1259,7 @@ class TextArea(Widget):
         self.active = False;
         self.cursor_ms = 0;
         self.cursor_visible = True;
+        self.cursor_state = None;
         self.padding = 8;
         self.scrollbar_size = 14;
         self.drag_scroll = None;
@@ -1301,6 +1303,18 @@ class TextArea(Widget):
 
     def cursor_position(self):
         return (self.cursor_row, self.cursor_col);
+
+    def set_cursor_state(self, state):
+        self.cursor_state = coerce_cursor_state(state);
+        self.cursor_visible = self.cursor_state != CursorState.HIDDEN;
+        self.cursor_ms = 0;
+        return self.cursor_state;
+
+    def text_grid_size(self):
+        line_h = max(1, self.font.get_height());
+        char_w = max(1, self.font.size("M")[0]);
+        rect = self.text_content_rect();
+        return max(1, rect.width // char_w), max(1, rect.height // line_h);
 
     def compare_positions(self, a, b):
         if a[0] < b[0]:
@@ -1970,7 +1984,15 @@ class TextArea(Widget):
                     cx = text_rect.x + max(0, visual_col - self.scroll_col) * char_w;
                     cy = text_rect.y + (self.cursor_row - self.scroll_row) * line_h;
                     if text_rect.collidepoint(cx, cy):
-                        pygame.draw.rect(screen, self.theme.cursor, pygame.Rect(cx, cy + 2, 3, line_h - 4));
+                        state = self.cursor_state;
+                        if state == CursorState.HIDDEN:
+                            pass;
+                        elif state == CursorState.NORMAL:
+                            pygame.draw.rect(screen, self.theme.cursor, pygame.Rect(cx, cy + max(1, line_h - 3), max(1, char_w), 2));
+                        elif state == CursorState.BLOCK:
+                            pygame.draw.rect(screen, self.theme.cursor, pygame.Rect(cx, cy, max(1, char_w), max(1, line_h)), 2);
+                        else:
+                            pygame.draw.rect(screen, self.theme.cursor, pygame.Rect(cx, cy + 2, 3, line_h - 4));
         with_clip(screen, full_rect, draw_inside);
         self.draw_scrollbar(screen);
 
@@ -2866,6 +2888,7 @@ class TerminalArea(TextArea):
     def __init__(self, rect, font, text="", theme=None, tab_index=0, show_v_scrollbar=True, show_h_scrollbar=True):
         super().__init__(rect, font, text=text, multiline=True, show_scrollbar=True, editable=False, max_lines=-1, max_cols=-1, theme=theme, show_v_scrollbar=show_v_scrollbar, show_h_scrollbar=show_h_scrollbar, accepts_tab=False, tab_index=tab_index, tab_size=8, syntax=None);
         self.line_colors = [];
+        self.set_cursor_state(CursorState.NORMAL);
         self.terminal_colors = {
             "normal": (220, 220, 220),
             "stdout": (220, 220, 220),

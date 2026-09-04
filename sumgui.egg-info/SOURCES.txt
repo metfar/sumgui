@@ -22,6 +22,7 @@ examples/demo_full.py
 examples/demo_market_dashboard.py
 examples/demo_mtcars_mpg_density_blue.py
 examples/demo_quick_start.py
+examples/demo_r202_screen_planes.py
 examples/demo_report_dashboard.py
 examples/demo_report_dashboard_matplotlib.py
 examples/demo_report_dashboard_native.py
@@ -60,6 +61,7 @@ sumgui/keymap.py
 sumgui/keyrepeat.py
 sumgui/scale.py
 sumgui/tables.py
+sumgui/textscreen.py
 sumgui/theme.py
 sumgui/voxel.py
 sumgui/widgets.py
@@ -75,6 +77,8 @@ tests/test_charts_contract.py
 tests/test_conio_contract.py
 tests/test_graphics_window_contract.py
 tests/test_r10_contracts.py
+tests/test_r202_layers.py
+tests/test_r202_textscreen.py
 udg_painter_reborn/3x3.ico
 udg_painter_reborn/6x6.ico
 udg_painter_reborn/LICENSE

@@ -229,3 +229,23 @@ def test_r19_examples_set_sum_sigma_icon_before_direct_pygame_windows():
         text = path.read_text(encoding="utf-8");
         if "pygame.display.set_mode" in text:
             assert "set_default_icon" in text, path.name;
+
+
+def test_r202_patterned_border_and_partial_layer_sort(monkeypatch):
+    module, pygame = _load_graphics(monkeypatch);
+    surface = module.GraphicsSurface(spectrum_mode());
+    surface.execute(GraphicsCommand("border", (1,)));
+    surface.execute(GraphicsCommand("border_paper", (1,)));
+    surface.execute(GraphicsCommand("border_ink", (5,)));
+    rows = (0xF0, 0xF0, 0x0F, 0x0F, 0xF0, 0xF0, 0x0F, 0x0F);
+    surface.execute(GraphicsCommand("border_pattern", (rows,)));
+    assert surface.border_pattern.rows == rows;
+    assert surface.border_pattern.paper[:3] == module.SPECTRUM_PALETTE[1];
+    assert surface.border_pattern.ink[:3] == module.SPECTRUM_PALETTE[5];
+    surface.execute(GraphicsCommand("border_scroll", (1, 2)));
+    assert (surface.border_pattern.offset_x, surface.border_pattern.offset_y) == (1, 2);
+    surface.execute(GraphicsCommand("sort_layers", (("GRAPHICS", "BORDER", "TEXT"), "ASC")));
+    assert surface.layers.order == ("BACKGROUND", "GRAPHICS", "BORDER", "TEXT");
+    target = pygame.Surface((300, 240));
+    surface._paint_border(target);
+    assert target.blits;

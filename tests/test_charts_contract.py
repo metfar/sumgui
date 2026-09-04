@@ -117,4 +117,4 @@ def test_r20_1_histogram_example_uses_common_plotspec():
     root=Path(__file__).resolve().parents[1]; text=(root/"examples"/"demo_mtcars_mpg_density_blue.py").read_text(encoding="utf-8"); assert "from sumplot import" in text; assert "to_chart_spec(build_plot())" in text; assert "pygame.image.save" in text;
 
 def test_r20_1_version_bumped():
-    root=Path(__file__).resolve().parents[1]; assert 'version = "0.2.0a14"' in (root/"pyproject.toml").read_text(encoding="utf-8"); assert '__version__ = "0.2.0a14"' in (root/"sumgui"/"__init__.py").read_text(encoding="utf-8");
+    root=Path(__file__).resolve().parents[1]; assert 'version = "0.2.0a15"' in (root/"pyproject.toml").read_text(encoding="utf-8"); assert '__version__ = "0.2.0a15"' in (root/"sumgui"/"__init__.py").read_text(encoding="utf-8");

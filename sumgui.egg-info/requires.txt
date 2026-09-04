@@ -1,4 +1,4 @@
-sumui>=0.1.0a11
+sumui>=0.1.0a12
 pygame>=2.0
 
 [charts]

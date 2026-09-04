@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: sumgui
-Version: 0.2.0a14
+Version: 0.2.0a15
 Summary: A tiny retro-flavored GUI toolkit for Pygame.
 Author: William Martinez Bas
 Author-email: William Martinez Bas <metfar@gmail.com>
@@ -13,7 +13,7 @@ Classifier: Topic :: Software Development :: User Interfaces
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: sumui>=0.1.0a11
+Requires-Dist: sumui>=0.1.0a12
 Requires-Dist: pygame>=2.0
 Provides-Extra: matplotlib
 Requires-Dist: matplotlib>=3.7; extra == "matplotlib"
