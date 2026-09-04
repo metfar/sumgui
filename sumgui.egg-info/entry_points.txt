@@ -1,3 +1,4 @@
 [console_scripts]
 sumgdialog = sumgui.tools.gdialog:main
+sumgui = sumgui.cli:main
 sumudg = udg_painter_reborn.udg_painter_sumgui:main

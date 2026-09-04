@@ -1,12 +1,17 @@
-sumui>=0.1.0a10
+sumui>=0.1.0a11
 pygame>=2.0
 
 [charts]
 matplotlib>=3.7
 seaborn>=0.13
+sumplot>=0.1.0a2
 
 [matplotlib]
 matplotlib>=3.7
+
+[plots]
+sumplot>=0.1.0a2
+sumdata>=0.1.0a2
 
 [seaborn]
 matplotlib>=3.7

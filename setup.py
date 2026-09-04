@@ -26,7 +26,7 @@ from setuptools import find_packages, setup;
 
 setup(
     name="sumgui",
-    version="0.2.0a12",
+    version="0.2.0a14",
     description="A tiny retro-flavored GUI toolkit for Pygame.",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
@@ -37,9 +37,9 @@ setup(
     include_package_data=True,
     package_data={"udg_painter_reborn": ["*.udg", "*.xpm", "*.ico", "*.png", "*.md", "LICENSE"]},
     python_requires=">=3.8",
-    install_requires=["sumui>=0.1.0a10", "pygame>=2.0"],
+    install_requires=["sumui>=0.1.0a11", "pygame>=2.0"],
     extras_require={"matplotlib": ["matplotlib>=3.7"], "seaborn": ["matplotlib>=3.7", "seaborn>=0.13"], "charts": ["matplotlib>=3.7", "seaborn>=0.13"]},
-    entry_points={"console_scripts": ["sumgdialog=sumgui.tools.gdialog:main", "sumudg=udg_painter_reborn.udg_painter_sumgui:main"]},
+    entry_points={"console_scripts": ["sumgui=sumgui.cli:main", "sumgdialog=sumgui.tools.gdialog:main", "sumudg=udg_painter_reborn.udg_painter_sumgui:main"]},
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",

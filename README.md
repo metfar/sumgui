@@ -373,3 +373,20 @@ The native Pygame chart renderer remains the default. Optional Matplotlib and Se
 The report dashboard is available in three equivalent examples: `demo_report_dashboard_native.py`, `demo_report_dashboard_matplotlib.py`, and `demo_report_dashboard_seaborn.py`.
 
 <p align=center><b>- oOo -<b></p>
+
+## r20.1 shared PlotSpec example
+
+`examples/demo_mtcars_mpg_density_blue.py` renders the same `mtcars` MPG density histogram used by sumR and sumPY through the native Pygame `ChartView`, and saves a PNG screenshot.
+
+
+## r20.1 graphical acceptance example
+
+With Pygame installed, the native GUI example consumes the same resolved SUM plot and shows it in a graphical window:
+
+```bash
+python examples/demo_mtcars_mpg_density_blue.py
+```
+
+The first rendered frame is also saved as `mtcars_mpg_density_blue_sumgui.png` for visual comparison.
+
+<p align=center><b>- oOo -</b></p>

@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: sumgui
-Version: 0.2.0a12
+Version: 0.2.0a14
 Summary: A tiny retro-flavored GUI toolkit for Pygame.
 Author: William Martinez Bas
 Author-email: William Martinez Bas <metfar@gmail.com>
@@ -13,7 +13,7 @@ Classifier: Topic :: Software Development :: User Interfaces
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: sumui>=0.1.0a10
+Requires-Dist: sumui>=0.1.0a11
 Requires-Dist: pygame>=2.0
 Provides-Extra: matplotlib
 Requires-Dist: matplotlib>=3.7; extra == "matplotlib"
@@ -23,6 +23,10 @@ Requires-Dist: seaborn>=0.13; extra == "seaborn"
 Provides-Extra: charts
 Requires-Dist: matplotlib>=3.7; extra == "charts"
 Requires-Dist: seaborn>=0.13; extra == "charts"
+Requires-Dist: sumplot>=0.1.0a2; extra == "charts"
+Provides-Extra: plots
+Requires-Dist: sumplot>=0.1.0a2; extra == "plots"
+Requires-Dist: sumdata>=0.1.0a2; extra == "plots"
 Dynamic: author
 Dynamic: license-file
 Dynamic: requires-python
@@ -402,3 +406,20 @@ The native Pygame chart renderer remains the default. Optional Matplotlib and Se
 The report dashboard is available in three equivalent examples: `demo_report_dashboard_native.py`, `demo_report_dashboard_matplotlib.py`, and `demo_report_dashboard_seaborn.py`.
 
 <p align=center><b>- oOo -<b></p>
+
+## r20.1 shared PlotSpec example
+
+`examples/demo_mtcars_mpg_density_blue.py` renders the same `mtcars` MPG density histogram used by sumR and sumPY through the native Pygame `ChartView`, and saves a PNG screenshot.
+
+
+## r20.1 graphical acceptance example
+
+With Pygame installed, the native GUI example consumes the same resolved SUM plot and shows it in a graphical window:
+
+```bash
+python examples/demo_mtcars_mpg_density_blue.py
+```
+
+The first rendered frame is also saved as `mtcars_mpg_density_blue_sumgui.png` for visual comparison.
+
+<p align=center><b>- oOo -</b></p>

@@ -19,5 +19,4 @@ For focus traversal:
 - `TextArea(..., accepts_tab=True)` inserts a tab character instead of changing focus.
 - `sumgdialog` follows the same focus ring: entries, other focusable controls and buttons participate in `Tab` / `Shift+Tab` traversal.
 
-
 <p align=center><b>- oOo -</b></p>

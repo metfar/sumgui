@@ -35,9 +35,6 @@ Built-in themes:
 
 ## 2D first
 
-The first alpha focuses on 2D. 
-
+The first alpha focuses on 2D.
 
 <p align=center><b>- oOo -</b></p>
-
-

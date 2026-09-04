@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sumgui"
-version = "0.2.0a13"
+version = "0.2.0a14"
 description = "A tiny retro-flavored GUI toolkit for Pygame."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -23,9 +23,11 @@ classifiers = [
 [project.optional-dependencies]
 matplotlib = ["matplotlib>=3.7"]
 seaborn = ["matplotlib>=3.7", "seaborn>=0.13"]
-charts = ["matplotlib>=3.7", "seaborn>=0.13"]
+charts = ["matplotlib>=3.7", "seaborn>=0.13", "sumplot>=0.1.0a2"]
+plots = ["sumplot>=0.1.0a2", "sumdata>=0.1.0a2"]
 
 [project.scripts]
+sumgui = "sumgui.cli:main"
 sumgdialog = "sumgui.tools.gdialog:main"
 sumudg = "udg_painter_reborn.udg_painter_sumgui:main"
 

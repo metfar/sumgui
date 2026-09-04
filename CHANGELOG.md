@@ -74,4 +74,4 @@
 
 - Coordinated sumGUI with the first sumUI contracts, shared ChartSpec, Android-safe event bridge, logical graphics surface and initial sumgdialog frontend.
 
-<p align=center><b>- oOo -<b></p>
+<p align=center><b>- oOo -</b></p>

@@ -145,7 +145,7 @@ class ChartView(ChartBase):
         if explicit:
             colors = list(explicit);
             if colors:
-                return colors[int(index) % len(colors)];
+                value=colors[int(index) % len(colors)]; return pygame.Color(value) if isinstance(value,str) else value;
         if self.theme.palette:
             panel = tuple(self.theme.panel[:3]);
             visible = [color for color in self.theme.palette if sum(abs(int(color[channel]) - int(panel[channel])) for channel in range(3)) >= 180];

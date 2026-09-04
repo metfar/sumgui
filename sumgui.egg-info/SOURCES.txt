@@ -20,6 +20,7 @@ examples/demo_dzhanibekov_sliders.py
 examples/demo_first.py
 examples/demo_full.py
 examples/demo_market_dashboard.py
+examples/demo_mtcars_mpg_density_blue.py
 examples/demo_quick_start.py
 examples/demo_report_dashboard.py
 examples/demo_report_dashboard_matplotlib.py
@@ -45,6 +46,7 @@ sumgui/application_backend.py
 sumgui/bgi.py
 sumgui/chart_backends.py
 sumgui/charts.py
+sumgui/cli.py
 sumgui/clipboard.py
 sumgui/commands.py
 sumgui/conio.py

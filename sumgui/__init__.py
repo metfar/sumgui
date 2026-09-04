@@ -26,7 +26,7 @@
 # before the top-level package has forced pygame to load.
 import pygame;
 
-__version__ = "0.2.0a13";
+__version__ = "0.2.0a14";
 
 from .contracts import GUI_BACKEND, backend_capabilities;
 from .eventbridge import event_to_common, touch_to_mouse_event;

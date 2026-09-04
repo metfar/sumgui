@@ -24,4 +24,4 @@ This is a backend responsibility, not a BASIC-specific rule. Future sumC/sumCPP/
 
 `sumchart` is the neutral command-line dispatcher for `sum.chart/1`. Language examples can emit one JSON contract and choose rendering only at execution time (`--backend=tui` or `--backend=gui`). This is the reference pattern for future native language bindings.
 
-<p align=center><b>- oOo -<b></p>
+<p align=center><b>- oOo -</b></p>

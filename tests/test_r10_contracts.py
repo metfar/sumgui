@@ -241,6 +241,41 @@ def test_application_backend_translates_native_touch_once():
     assert len(received) == 1;
 
 
+
+def test_application_backend_space_is_inserted_only_by_textinput():
+    import importlib.util;
+    from pathlib import Path;
+    import sys;
+    import types;
+
+    pygame = types.ModuleType("pygame");
+    import importlib.machinery;
+    pygame.__spec__ = importlib.machinery.ModuleSpec("pygame", loader=None);
+    pygame.KEYDOWN = 8;
+    pygame.TEXTINPUT = 9;
+    pygame.K_SPACE = 32;
+    pygame.KMOD_CTRL = 1;
+    pygame.KMOD_ALT = 2;
+    pygame.KMOD_SHIFT = 4;
+    pygame.key = types.SimpleNamespace(get_mods=lambda: 0, name=lambda key: "space");
+    sys.modules["pygame"] = pygame;
+    _package_stub();
+    root = Path(__file__).resolve().parents[1] / "sumgui";
+    path = root / "application_backend.py";
+    spec = importlib.util.spec_from_file_location("sumgui.application_backend", path);
+    module = importlib.util.module_from_spec(spec);
+    sys.modules["sumgui.application_backend"] = module;
+    spec.loader.exec_module(module);
+
+    class Key:
+        SPACE = "space"; ESCAPE="escape"; ENTER="enter"; BACKSPACE="backspace"; DELETE="delete"; INSERT="insert"; TAB="tab"; UP="up"; DOWN="down"; LEFT="left"; RIGHT="right"; HOME="home"; END="end"; PAGE_UP="page_up"; PAGE_DOWN="page_down";
+    for index in range(1, 13): setattr(Key, "F%d" % index, "f%d" % index);
+    event = types.SimpleNamespace(type=pygame.KEYDOWN, key=pygame.K_SPACE, mod=0, unicode=" ");
+    translated = module.pygame_key_to_sum(event, pygame, Key, lambda key, **kw: types.SimpleNamespace(key=key, **kw));
+    assert translated.key == Key.SPACE;
+    assert translated.text == "";
+
+
 def test_native_editorview_has_semantic_syntax_and_line_numbers_contract():
     import ast;
     from pathlib import Path;

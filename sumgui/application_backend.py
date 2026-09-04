@@ -89,8 +89,11 @@ def pygame_key_to_sum(event, pygame, Key, KeyEvent):
     mapping = _key_map(pygame, Key);
     key = mapping.get(getattr(event, "key", None));
     if key is not None:
-        text = " " if key == Key.SPACE else "";
-        return KeyEvent(key, text=text, ctrl=ctrl, alt=alt, shift=shift);
+        # Printable characters are inserted exclusively through TEXTINPUT.
+        # SPACE must still be represented as a logical key so buttons and
+        # checkboxes can react to it, but attaching text here would cause
+        # editors to insert one space for KEYDOWN and another for TEXTINPUT.
+        return KeyEvent(key, text="", ctrl=ctrl, alt=alt, shift=shift);
     if not (ctrl or alt):
         return None;
     try:
