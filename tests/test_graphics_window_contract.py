@@ -249,3 +249,30 @@ def test_r202_patterned_border_and_partial_layer_sort(monkeypatch):
     target = pygame.Surface((300, 240));
     surface._paint_border(target);
     assert target.blits;
+
+
+def test_r2021_border_width_preserves_inner_graphics_size_and_resizes_auto_window(monkeypatch):
+    module, unused_pygame = _load_graphics(monkeypatch);
+    window = module.GraphicsWindow(title="Border width", fit_display=False);
+    window.handle(basic_mode(100, 80));
+    assert window.screen.get_size() == (100, 80);
+    window.handle(GraphicsCommand("border_width", (10,)));
+    assert window.surface.border_width == 10;
+    assert window.screen.get_size() == (120, 100);
+    rect = window.surface.destination_rect(window.screen.get_size());
+    assert (rect.x, rect.y, rect.width, rect.height) == (10, 10, 100, 80);
+
+
+def test_r2021_basic_style_window_queues_q_and_does_not_reopen_after_close(monkeypatch):
+    module, pygame = _load_graphics(monkeypatch);
+    window = module.GraphicsWindow(title="Input", close_on_escape=False);
+    window.handle(basic_mode(64, 48));
+    events = [types.SimpleNamespace(type=pygame.KEYDOWN, key=ord("q"), unicode="q")];
+    pygame.event.get = lambda: [events.pop(0)] if events else [];
+    window.handle(GraphicsCommand("border_scroll", (1, 0)));
+    assert window.read_key() == "q";
+    window.close();
+    old_screen = window.screen;
+    window.handle(GraphicsCommand("border_scroll", (1, 0)));
+    assert window.closed is True;
+    assert window.screen is old_screen;

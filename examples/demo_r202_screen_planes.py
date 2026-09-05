@@ -40,12 +40,13 @@ def main():
     print("cursor:", text.cursor(False).value, "->", text.cursor(True).value, "->", text.cursor("block").value);
     text.cursor(True);
 
-    # Native active-surface scaling deliberately leaves a visible four-sided
-    # physical frame so the BORDER tile is obvious in this standalone demo.
-    window = GraphicsWindow(title="SUM r20.2 - layers / patterned BORDER", window_size=(800, 600), fit_display=False);
-    window.handle(spectrum_mode(scaling="native"));
+    # BORDER WIDTH is logical: the standalone window grows around the 256x192
+    # graphics surface while GWIDTH/GHEIGHT remain unchanged.
+    window = GraphicsWindow(title="SUM r20.2.1 - layers / patterned BORDER", fit_display=True);
+    window.handle(spectrum_mode(scaling="integer"));
     window.handle(GraphicsCommand("paper", (0,)));
     window.handle(GraphicsCommand("border", (1,)));
+    window.handle(GraphicsCommand("border_width", (16,)));
     window.handle(GraphicsCommand("border_paper", (1,)));
     window.handle(GraphicsCommand("border_ink", (5,)));
     window.handle(GraphicsCommand("border_pattern", (PATTERN,)));

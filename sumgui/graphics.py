@@ -25,7 +25,7 @@ import math;
 
 import pygame;
 
-from sumui import BASIC16_PALETTE, VGA256_PALETTE, BorderPattern, ChartSpec, ColorSpec, FontSpec, GraphicsCommand, GraphicsMode, GraphicsProgram, ImageSpec, LayerStack, TableSpec, indexed_basic_color, modern_mode, normalize_layer_name;
+from sumui import BASIC16_PALETTE, VGA256_PALETTE, BorderPattern, ChartSpec, ColorSpec, FontSpec, GraphicsCommand, GraphicsMode, GraphicsProgram, ImageSpec, LayerStack, TableSpec, coerce_border_width, indexed_basic_color, modern_mode, normalize_layer_name;
 
 from .display import fit_window_size;
 
@@ -80,6 +80,7 @@ class GraphicsSurface:
         self.border_ink = self.foreground;
         self.border_paper = self.border;
         self.border_pattern = None;
+        self.border_width = coerce_border_width(self.mode.option("border_width", 0) or 0);
         self.layers = LayerStack();
         self.bright = False;
         self.flash = False;
@@ -377,6 +378,10 @@ class GraphicsSurface:
         self.border_pattern = None;
         return self;
 
+    def set_border_width(self, value):
+        self.border_width = coerce_border_width(value);
+        return self;
+
     def set_border_ink(self, value):
         self.border_ink = self._profile_color(value, (255, 255, 255));
         if self.border_pattern is not None: self.border_pattern.ink = self.border_ink;
@@ -461,6 +466,8 @@ class GraphicsSurface:
             return self.set_paper(args[0]);
         if op == "border":
             return self.set_border(args[0]);
+        if op == "border_width":
+            return self.set_border_width(args[0]);
         if op == "border_ink":
             return self.set_border_ink(args[0]);
         if op == "border_paper":
@@ -502,19 +509,34 @@ class GraphicsSurface:
         return self;
 
     def destination_rect(self, target_size):
+        """Return the GRAPHICS content rect inside the BORDER frame.
+
+        ``border_width`` is measured in logical graphics units, so resizing or
+        integer scaling preserves the same frame/content proportion.  GWIDTH
+        and GHEIGHT continue to describe only the inner graphics surface.
+        """;
         target_width, target_height = int(target_size[0]), int(target_size[1]);
-        if self.mode.scaling in ("stretch", "native"):
-            if self.mode.scaling == "native":
-                width = min(self.width, target_width); height = min(self.height, target_height);
-            else:
-                width = target_width; height = target_height;
+        border = coerce_border_width(self.border_width);
+        frame_width = max(1, self.width + border * 2);
+        frame_height = max(1, self.height + border * 2);
+        if self.mode.scaling == "stretch":
+            scale_x = target_width / float(frame_width);
+            scale_y = target_height / float(frame_height);
+            frame_x = 0; frame_y = 0;
         else:
-            scale = min(target_width / float(self.width), target_height / float(self.height));
-            if self.mode.scaling == "integer":
-                scale = max(1.0, float(int(scale))) if scale >= 1.0 else scale;
-            width = max(1, int(round(self.width * scale)));
-            height = max(1, int(round(self.height * scale)));
-        return pygame.Rect((target_width - width) // 2, (target_height - height) // 2, width, height);
+            scale = min(target_width / float(frame_width), target_height / float(frame_height));
+            if self.mode.scaling == "native": scale = min(1.0, scale);
+            elif self.mode.scaling == "integer" and scale >= 1.0: scale = max(1.0, float(int(scale)));
+            scale_x = scale_y = scale;
+            rendered_frame_width = max(1, int(round(frame_width * scale_x)));
+            rendered_frame_height = max(1, int(round(frame_height * scale_y)));
+            frame_x = (target_width - rendered_frame_width) // 2;
+            frame_y = (target_height - rendered_frame_height) // 2;
+        x = frame_x + int(round(border * scale_x));
+        y = frame_y + int(round(border * scale_y));
+        width = max(1, int(round(self.width * scale_x)));
+        height = max(1, int(round(self.height * scale_y)));
+        return pygame.Rect(x, y, width, height);
 
     def _paint_border(self, target):
         target.fill(self.border[:3] if len(self.border) >= 3 else self.border);
@@ -554,15 +576,17 @@ class GraphicsWindow:
     explicit ``update`` command.  Active and visible pages remain independent,
     matching classic BASIC page-flipping semantics.
     """;
-    def __init__(self, title="Sum graphics", window_size=None, fit_display=True, smooth=False):
-        self.title=str(title); self.window_size=tuple(window_size) if window_size is not None else None; self.fit_display=bool(fit_display); self.smooth=bool(smooth);
-        self.surface=None; self.pages=[]; self.screen=None; self.mode=None; self.closed=False; self.clock=None;
+    def __init__(self, title="Sum graphics", window_size=None, fit_display=True, smooth=False, close_on_escape=True):
+        self.title=str(title); self.window_size=tuple(window_size) if window_size is not None else None; self.fit_display=bool(fit_display); self.smooth=bool(smooth); self.close_on_escape=bool(close_on_escape);
+        self.surface=None; self.pages=[]; self.screen=None; self.mode=None; self.closed=False; self.clock=None; self._input_queue=[];
         self.active_page=0; self.visible_page=0; self.auto_update=True;
 
     def _desired_size(self, mode):
         if self.window_size is not None: return int(self.window_size[0]),int(self.window_size[1]);
-        if mode.profile=="spectrum": return mode.logical_width*3,mode.logical_height*3;
-        return mode.logical_width,mode.logical_height;
+        border = self.surface.border_width if self.surface is not None else int(mode.option("border_width", 0) or 0);
+        width = int(mode.logical_width) + border * 2; height = int(mode.logical_height) + border * 2;
+        if mode.profile=="spectrum": return width*3,height*3;
+        return width,height;
 
     def _select_active(self):
         if self.pages: self.surface=self.pages[self.active_page];
@@ -583,10 +607,32 @@ class GraphicsWindow:
         requested=self._desired_size(self.mode); size=fit_window_size(*requested) if self.fit_display and not self.mode.fullscreen else requested;
         flags=pygame.FULLSCREEN if self.mode.fullscreen else (pygame.RESIZABLE if self.mode.resizable else 0);
         self.screen=pygame.display.set_mode((0,0),flags) if self.mode.fullscreen else pygame.display.set_mode(size,flags);
-        pygame.display.set_caption(self.title); self.clock=pygame.time.Clock(); self.closed=False; self.present(); return self;
+        pygame.display.set_caption(self.title); self.clock=pygame.time.Clock(); self.closed=False; self._input_queue=[]; self.present(); return self;
 
     def _ensure_open(self):
-        if self.surface is None or self.screen is None or self.closed: self._open(self.mode or modern_mode(640,480));
+        if self.closed and self.surface is not None: return None;
+        if self.surface is None or self.screen is None: self._open(self.mode or modern_mode(640,480));
+        return self;
+
+    @staticmethod
+    def _event_key(event):
+        text = str(getattr(event, "unicode", "") or "");
+        if text: return text;
+        key = getattr(event, "key", None);
+        if key == getattr(pygame, "K_ESCAPE", None): return chr(27);
+        if isinstance(key, int) and 32 <= key <= 126:
+            try: return chr(key);
+            except ValueError: pass;
+        return "";
+
+    def read_key(self):
+        return self._input_queue.pop(0) if self._input_queue else "";
+
+    def _resize_for_border(self):
+        if self.screen is None or self.mode is None or self.mode.fullscreen or self.window_size is not None: return self;
+        requested=self._desired_size(self.mode); size=fit_window_size(*requested) if self.fit_display else requested;
+        flags=pygame.RESIZABLE if self.mode.resizable else 0;
+        self.screen=pygame.display.set_mode(size,flags);
         return self;
 
     def set_active_page(self,index):
@@ -610,7 +656,7 @@ class GraphicsWindow:
         if isinstance(item,GraphicsMode): self._open(item); return item;
         command=item if isinstance(item,GraphicsCommand) else GraphicsCommand.from_dict(item); op=command.operation; args=tuple(command.arguments); options=dict(command.options);
         if op in ("close","text_mode"): self.close(); return command;
-        self._ensure_open();
+        if self._ensure_open() is None: return command;
         if op=="capture": return self.surface.capture(*(args or (0,0,self.surface.width,self.surface.height)));
         if op=="save_image": return self.surface.save_image(args[0],image=args[1] if len(args)>1 else None);
         if op=="load_image": return self.surface.load_image(args[0]);
@@ -620,7 +666,9 @@ class GraphicsWindow:
         if op in ("copy_page","copy_screen"): self.copy_page(args[0],args[1]); return command;
         if op in ("update","refresh","redraw"): self.present(); return command;
         if op=="refresh_mode": self.auto_update=str(args[0]).lower()!="manual"; return command;
-        self.surface.execute(command); self.poll();
+        self.surface.execute(command);
+        if op == "border_width": self._resize_for_border();
+        self.poll();
         if not self.closed and self.auto_update and self.active_page==self.visible_page: self.present();
         return command;
 
@@ -638,8 +686,11 @@ class GraphicsWindow:
         resized=False;
         resize_types=(getattr(pygame,"VIDEORESIZE",-1),getattr(pygame,"WINDOWRESIZED",-2),getattr(pygame,"WINDOWSIZECHANGED",-3));
         for event in pygame.event.get():
-            if event.type==pygame.QUIT: self.closed=True; break;
-            if event.type==pygame.KEYDOWN and event.key==pygame.K_ESCAPE: self.closed=True; break;
+            if event.type==pygame.QUIT: self._input_queue.append(chr(27)); self.closed=True; break;
+            if event.type==pygame.KEYDOWN:
+                key_text=self._event_key(event);
+                if key_text: self._input_queue.append(key_text);
+                if event.key==pygame.K_ESCAPE and self.close_on_escape: self.closed=True; break;
             if event.type in resize_types:
                 size=getattr(event,"size",(getattr(event,"w",1),getattr(event,"h",1))); width=max(1,int(getattr(event,"w",size[0]))); height=max(1,int(getattr(event,"h",size[1]))); flags=pygame.RESIZABLE if self.mode is None or self.mode.resizable else 0; self.screen=pygame.display.set_mode((width,height),flags); resized=True;
         if self.closed: self.close(); return False;
@@ -682,10 +733,18 @@ class GraphicsWindow:
             resized=False;
             for event in pygame.event.get():
                 if event.type==pygame.QUIT:
+                    self._input_queue.append(chr(27));
                     self.closed=True;
                     self.close();
                     return True;
-                if event.type in input_types:
+                if event.type==getattr(pygame,"KEYDOWN",-10):
+                    key_text=self._event_key(event);
+                    if key_text: self._input_queue.append(key_text);
+                    if getattr(event,"key",None)==getattr(pygame,"K_ESCAPE",None) and self.close_on_escape:
+                        self.closed=True; self.close();
+                    else: self.present();
+                    return True;
+                if event.type in (getattr(pygame,"MOUSEBUTTONDOWN",-11),getattr(pygame,"FINGERDOWN",-12)):
                     self.present();
                     return True;
                 if event.type in resize_types:
