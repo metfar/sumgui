@@ -33,8 +33,8 @@ PATTERN = (0b11110000, 0b11110000, 0b00001111, 0b00001111,
 
 def main():
     # In a real widget this provider is bound to the live viewport/cell size.
-    viewport = [800, 600];
-    cell = [10, 20];
+    viewport = [480, 320];
+    cell = [8, 16];
     text = GuiTextScreen(lambda: tuple(viewport), lambda: tuple(cell));
     print("sumGUI TextGrid:", text.cols, "x", text.rows);
     print("cursor:", text.cursor(False).value, "->", text.cursor(True).value, "->", text.cursor("block").value);
@@ -42,8 +42,8 @@ def main():
 
     # BORDER WIDTH is logical: the standalone window grows around the 256x192
     # graphics surface while GWIDTH/GHEIGHT remain unchanged.
-    window = GraphicsWindow(title="SUM r20.2.1 - layers / patterned BORDER", fit_display=True);
-    window.handle(spectrum_mode(scaling="integer"));
+    window = GraphicsWindow(title="SUM r20.2.2 - layers / patterned BORDER", window_size=(480, 360), fit_display=True);
+    window.handle(spectrum_mode(scaling="fit"));
     window.handle(GraphicsCommand("paper", (0,)));
     window.handle(GraphicsCommand("border", (1,)));
     window.handle(GraphicsCommand("border_width", (16,)));
