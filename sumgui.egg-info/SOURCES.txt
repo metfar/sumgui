@@ -44,6 +44,7 @@ examples/components/demo_textarea.py
 examples/components/demo_textinput.py
 sumgui/__init__.py
 sumgui/application_backend.py
+sumgui/audio.py
 sumgui/bgi.py
 sumgui/chart_backends.py
 sumgui/charts.py

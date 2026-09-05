@@ -26,7 +26,9 @@
 # before the top-level package has forced pygame to load.
 import pygame;
 
-__version__ = "0.2.0a18";
+__version__ = "0.2.0a19";
+
+from .audio import audio_engine, beep, play, set_audio_engine, sound, stop_audio, wait_audio;
 
 from .contracts import GUI_BACKEND, backend_capabilities;
 from .eventbridge import event_to_common, touch_to_mouse_event;

@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: sumgui
-Version: 0.2.0a18
+Version: 0.2.0a19
 Summary: A tiny retro-flavored GUI toolkit for Pygame.
 Author: William Martinez Bas
 Author-email: William Martinez Bas <metfar@gmail.com>
@@ -13,6 +13,7 @@ Classifier: Topic :: Software Development :: User Interfaces
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
+Requires-Dist: sumcore>=0.1.0a4
 Requires-Dist: sumui>=0.1.0a13
 Requires-Dist: pygame>=2.0
 Provides-Extra: matplotlib
@@ -421,5 +422,18 @@ python examples/demo_mtcars_mpg_density_blue.py
 ```
 
 The first rendered frame is also saved as `mtcars_mpg_density_blue_sumgui.png` for visual comparison.
+
+## Shared audio
+
+SumGUI exposes `beep`, `sound`, `play`, `stop_audio`, and `wait_audio` from the
+common sumCore service. Pygame may act as an output device, but waveform and
+music semantics remain owned by core rather than by GUI widgets.
+
+```python
+from sumgui import play, stop_audio;
+
+play("O4c", hold=True, timeout=3);
+stop_audio();
+```
 
 <p align=center><b>- oOo -</b></p>

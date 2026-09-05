@@ -389,4 +389,17 @@ python examples/demo_mtcars_mpg_density_blue.py
 
 The first rendered frame is also saved as `mtcars_mpg_density_blue_sumgui.png` for visual comparison.
 
+## Shared audio
+
+SumGUI exposes `beep`, `sound`, `play`, `stop_audio`, and `wait_audio` from the
+common sumCore service. Pygame may act as an output device, but waveform and
+music semantics remain owned by core rather than by GUI widgets.
+
+```python
+from sumgui import play, stop_audio;
+
+play("O4c", hold=True, timeout=3);
+stop_audio();
+```
+
 <p align=center><b>- oOo -</b></p>

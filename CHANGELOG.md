@@ -1,3 +1,7 @@
+# 0.2.0a19
+
+- Exposed the shared sumCore `beep`, `sound`, `play`, `stop_audio`, and `wait_audio` API without duplicating synthesis in SumGUI.
+
 # 0.2.0a18
 
 - Forward Pygame `KEYUP` as common Sum key-release events, enabling sustained controls without frontend-specific polling.
