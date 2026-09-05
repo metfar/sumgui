@@ -1,3 +1,7 @@
+# 0.2.0a18
+
+- Forward Pygame `KEYUP` as common Sum key-release events, enabling sustained controls without frontend-specific polling.
+
 # r20 coordinated release
 
 - Aligned with SUM r20 architecture and package versions.

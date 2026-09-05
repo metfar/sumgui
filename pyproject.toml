@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sumgui"
-version = "0.2.0a17"
+version = "0.2.0a18"
 description = "A tiny retro-flavored GUI toolkit for Pygame."
 readme = "README.md"
 requires-python = ">=3.8"

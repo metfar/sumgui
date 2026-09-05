@@ -76,8 +76,8 @@ def _key_map(pygame, Key):
     return {getattr(pygame, source): target for source, target in names.items() if hasattr(pygame, source)};
 
 
-def pygame_key_to_sum(event, pygame, Key, KeyEvent):
-    """Translate a Pygame KEYDOWN to the application's normal key event.
+def pygame_key_to_sum(event, pygame, Key, KeyEvent, action="press"):
+    """Translate a Pygame key press/release to the normal Sum key event.
 
     Printable text without Ctrl/Alt is intentionally left to TEXTINPUT so
     international keyboards and composed Unicode input keep working.
@@ -93,15 +93,15 @@ def pygame_key_to_sum(event, pygame, Key, KeyEvent):
         # SPACE must still be represented as a logical key so buttons and
         # checkboxes can react to it, but attaching text here would cause
         # editors to insert one space for KEYDOWN and another for TEXTINPUT.
-        return KeyEvent(key, text="", ctrl=ctrl, alt=alt, shift=shift);
-    if not (ctrl or alt):
+        return KeyEvent(key, text="", ctrl=ctrl, alt=alt, shift=shift, action=action);
+    if action == "press" and not (ctrl or alt):
         return None;
     try:
         name = str(pygame.key.name(event.key) or "").lower();
     except Exception:
         name = "";
     if len(name) == 1:
-        return KeyEvent(name, ctrl=ctrl, alt=alt, shift=shift);
+        return KeyEvent(name, text=name if action == "release" else "", ctrl=ctrl, alt=alt, shift=shift, action=action);
     return None;
 
 
@@ -279,6 +279,9 @@ class GraphicalApplicationBackend:
             return False;
         if event.type == pygame.KEYDOWN:
             translated = pygame_key_to_sum(event, pygame, self.Key, self.KeyEvent);
+            return bool(translated is not None and self.application.dispatch(translated));
+        if event.type == pygame.KEYUP:
+            translated = pygame_key_to_sum(event, pygame, self.Key, self.KeyEvent, action="release");
             return bool(translated is not None and self.application.dispatch(translated));
         if event.type == pygame.TEXTINPUT:
             dirty = False;
