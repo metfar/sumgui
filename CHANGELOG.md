@@ -1,3 +1,8 @@
+# 0.2.0a21
+
+- Added `tone_sound()` / `midi_sound()` adapters that build Pygame `Sound` objects from the canonical sumCore/BASIC PCM generator rather than duplicating oscillator code in GUI applications.
+- Added `examples/piano_sum.py`, derived from the existing polyphonic Pygame piano model, with per-MIDI sound caching, corrected octave-shift pitch, and no-retrigger guards for already-active notes.
+
 # 0.2.0a20
 
 - Unified graphical application key repeat with the shared sumGUI repeat controller and matched `xset r rate 250 30`: 250 ms initial delay and a 33 ms interval (approximately 30 Hz).

@@ -32,6 +32,7 @@ examples/demo_stdio_compat.py
 examples/demo_sumgui_dzhanibekov_st.py
 examples/demo_textinput_keyrepeat.py
 examples/demo_themes.py
+examples/piano_sum.py
 examples/components/demo_all.py
 examples/components/demo_button.py
 examples/components/demo_canvas.py

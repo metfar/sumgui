@@ -403,3 +403,10 @@ stop_audio();
 ```
 
 <p align=center><b>- oOo -</b></p>
+
+
+## Shared tone buffers
+
+`sumgui.audio.tone_sound()` and `midi_sound()` create Pygame `Sound` objects from the exact sine/PCM generator owned by `sumcore`, so graphical instruments do not maintain a second oscillator implementation.
+
+See `examples/piano_sum.py` for the polyphonic keyboard example.

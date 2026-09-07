@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: sumgui
-Version: 0.2.0a20
+Version: 0.2.0a21
 Summary: A tiny retro-flavored GUI toolkit for Pygame.
 Author: William Martinez Bas
 Author-email: William Martinez Bas <metfar@gmail.com>
@@ -437,3 +437,10 @@ stop_audio();
 ```
 
 <p align=center><b>- oOo -</b></p>
+
+
+## Shared tone buffers
+
+`sumgui.audio.tone_sound()` and `midi_sound()` create Pygame `Sound` objects from the exact sine/PCM generator owned by `sumcore`, so graphical instruments do not maintain a second oscillator implementation.
+
+See `examples/piano_sum.py` for the polyphonic keyboard example.
