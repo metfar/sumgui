@@ -207,7 +207,7 @@ class EasyApp:
         self.panel = Panel(pygame.Rect(0, 0, self.width, self.height), self.theme);
         self.modal = None;
         self.running = False;
-        enable_key_repeat(250, 31);
+        enable_key_repeat();
 
     def make_font(self, size=None, bold=False):
         size = self.font_size if size is None else size;

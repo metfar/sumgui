@@ -66,7 +66,7 @@ def main():
 
     panel = build_panel();
     running = True;
-    enable_key_repeat(250, 31);
+    enable_key_repeat(250, 33);
     while running:
         dt = clock.tick(60);
         old = current[0];

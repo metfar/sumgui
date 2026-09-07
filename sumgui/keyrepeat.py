@@ -23,10 +23,13 @@
 
 import pygame;
 
-DOS_FAST_DELAY_MS = 250;
-DOS_FAST_INTERVAL_MS = 31;
-DEFAULT_DELAY_MS = DOS_FAST_DELAY_MS;
-DEFAULT_INTERVAL_MS = DOS_FAST_INTERVAL_MS;
+XSET_DELAY_MS = 250;
+XSET_RATE_HZ = 30;
+XSET_INTERVAL_MS = int(round(1000.0 / XSET_RATE_HZ));
+DOS_FAST_DELAY_MS = XSET_DELAY_MS;
+DOS_FAST_INTERVAL_MS = XSET_INTERVAL_MS;
+DEFAULT_DELAY_MS = XSET_DELAY_MS;
+DEFAULT_INTERVAL_MS = XSET_INTERVAL_MS;
 
 _REPEATABLE_KEY_EVENTS = {
     pygame.K_BACKSPACE,
@@ -102,6 +105,11 @@ class KeyRepeatState:
         if self.last_keydown_key in self.pressed:
             self.pressed[self.last_keydown_key]["text"] = getattr(event, "text", "");
 
+    def reset(self):
+        self.pressed = {};
+        self.last_keydown_key = None;
+        return None;
+
     def make_repeat_events(self, now):
         output = [];
         if not self.enabled:
@@ -135,6 +143,10 @@ class KeyRepeatState:
                 self.keyup(event);
             elif event.type == pygame.TEXTINPUT:
                 self.textinput(event);
+            elif event.type == getattr(pygame, "WINDOWFOCUSLOST", -101):
+                self.reset();
+            elif event.type == getattr(pygame, "ACTIVEEVENT", -102) and getattr(event, "gain", 1) == 0:
+                self.reset();
         output.extend(self.make_repeat_events(now));
         return output;
 

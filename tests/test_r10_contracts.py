@@ -339,3 +339,91 @@ def test_datetime_component_demo_is_packaged_in_source_tree():
     text = path.read_text(encoding="utf-8");
     assert "CalendarView" in text and "TimeView" in text and "DateTimeView" in text;
     assert "Σ" in text;
+
+
+def test_keyrepeat_matches_xset_rate_250_30_and_clears_sticky_keys_on_focus_loss():
+    import importlib.util;
+    import importlib.machinery;
+    import sys;
+    import types;
+    from pathlib import Path;
+
+    pygame = types.ModuleType("pygame");
+    pygame.__spec__ = importlib.machinery.ModuleSpec("pygame", loader=None);
+    names = [
+        "K_BACKSPACE", "K_DELETE", "K_RETURN", "K_KP_ENTER", "K_TAB",
+        "K_LEFT", "K_RIGHT", "K_UP", "K_DOWN", "K_HOME", "K_END",
+        "K_PAGEUP", "K_PAGEDOWN", "K_SPACE", "K_LSHIFT", "K_RSHIFT",
+        "K_LCTRL", "K_RCTRL", "K_LALT", "K_RALT", "K_CAPSLOCK",
+        "K_NUMLOCKCLEAR",
+    ];
+    for index, name in enumerate(names, start=1):
+        setattr(pygame, name, index);
+    pygame.KEYDOWN = 100;
+    pygame.KEYUP = 101;
+    pygame.TEXTINPUT = 102;
+    pygame.WINDOWFOCUSLOST = 103;
+    pygame.ACTIVEEVENT = 104;
+    pygame.key = types.SimpleNamespace(get_mods=lambda: 0, name=lambda key: str(key), set_repeat=lambda *_args: None);
+    pygame.time = types.SimpleNamespace(get_ticks=lambda: 1000);
+    pygame.event = types.SimpleNamespace(Event=lambda kind, **kwargs: types.SimpleNamespace(type=kind, **kwargs));
+    sys.modules["pygame"] = pygame;
+    _package_stub();
+    path = Path(__file__).resolve().parents[1] / "sumgui" / "keyrepeat.py";
+    spec = importlib.util.spec_from_file_location("sumgui.keyrepeat", path);
+    module = importlib.util.module_from_spec(spec);
+    sys.modules["sumgui.keyrepeat"] = module;
+    spec.loader.exec_module(module);
+    assert module.XSET_DELAY_MS == 250;
+    assert module.XSET_RATE_HZ == 30;
+    assert module.DEFAULT_INTERVAL_MS == 33;
+    state = module.KeyRepeatState();
+    state.keydown(types.SimpleNamespace(key=pygame.K_LEFT, mod=0, unicode=""), 1000);
+    assert state.pressed;
+    state.process_events([types.SimpleNamespace(type=pygame.WINDOWFOCUSLOST)]);
+    assert state.pressed == {};
+
+
+def test_application_backend_marks_synthetic_repeat_events_as_repeat_actions():
+    import importlib.util;
+    import importlib.machinery;
+    import sys;
+    import types;
+    from pathlib import Path;
+
+    pygame = types.ModuleType("pygame");
+    pygame.__spec__ = importlib.machinery.ModuleSpec("pygame", loader=None);
+    pygame.FINGERDOWN = 1; pygame.FINGERMOTION = 2; pygame.FINGERUP = 3;
+    pygame.MOUSEBUTTONDOWN = 4; pygame.MOUSEBUTTONUP = 5; pygame.MOUSEMOTION = 6;
+    pygame.MOUSEWHEEL = 7; pygame.KEYDOWN = 8; pygame.KEYUP = 9; pygame.TEXTINPUT = 10;
+    pygame.QUIT = 11; pygame.VIDEORESIZE = 12; pygame.WINDOWRESIZED = 13;
+    pygame.WINDOWSIZECHANGED = 14; pygame.WINDOWFOCUSLOST = 15; pygame.WINDOWFOCUSGAINED = 16;
+    pygame.KMOD_CTRL = 1; pygame.KMOD_ALT = 2; pygame.KMOD_SHIFT = 4;
+    pygame.K_LEFT = 20;
+    pygame.key = types.SimpleNamespace(get_mods=lambda: 0, name=lambda key: "left", set_repeat=lambda *_args: None);
+    pygame.mouse = types.SimpleNamespace(get_pos=lambda: (0, 0));
+    sys.modules["pygame"] = pygame;
+    _package_stub();
+    root = Path(__file__).resolve().parents[1] / "sumgui";
+    for module_name in ("eventbridge", "application_backend"):
+        path = root / (module_name + ".py");
+        spec = importlib.util.spec_from_file_location("sumgui." + module_name, path);
+        module = importlib.util.module_from_spec(spec);
+        sys.modules["sumgui." + module_name] = module;
+        spec.loader.exec_module(module);
+    backend_module = sys.modules["sumgui.application_backend"];
+    class Key:
+        LEFT = "left"; ESCAPE="escape"; ENTER="enter"; BACKSPACE="backspace"; DELETE="delete"; INSERT="insert"; TAB="tab"; SPACE="space"; UP="up"; DOWN="down"; RIGHT="right"; HOME="home"; END="end"; PAGE_UP="page_up"; PAGE_DOWN="page_down";
+    for index in range(1, 13): setattr(Key, "F%d" % index, "f%d" % index);
+    received = [];
+    backend = backend_module.GraphicalApplicationBackend.__new__(backend_module.GraphicalApplicationBackend);
+    backend.pygame = pygame;
+    backend.Key = Key;
+    backend.KeyEvent = lambda key, **kwargs: types.SimpleNamespace(key=key, **kwargs);
+    backend.MouseEvent = lambda *args, **kwargs: types.SimpleNamespace(args=args, **kwargs);
+    backend.application = types.SimpleNamespace(dispatch=lambda event: received.append(event) or True, stop=lambda: None);
+    backend.screen = types.SimpleNamespace(get_size=lambda: (800, 600), get_width=lambda: 800, get_height=lambda: 600);
+    backend.cell_width = 10; backend.cell_height = 20; backend._left_down = False;
+    event = types.SimpleNamespace(type=pygame.KEYDOWN, key=pygame.K_LEFT, mod=0, repeated=True);
+    assert backend._dispatch_pygame(event) is True;
+    assert received[-1].action == "repeat";

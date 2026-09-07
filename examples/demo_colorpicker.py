@@ -74,7 +74,7 @@ def main():
     b.on_change = sync;
 
     running = True;
-    enable_key_repeat(250, 31);
+    enable_key_repeat(250, 33);
     while running:
         dt = clock.tick(60);
         for event in get_events():

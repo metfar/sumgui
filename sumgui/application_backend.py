@@ -129,6 +129,21 @@ class GraphicalApplicationBackend:
         self.render_console = None;
         self._left_down = False;
         self._redraw_requested = True;
+        self.key_repeat_enabled = True;
+        self.key_repeat_delay_ms = 250;
+        self.key_repeat_interval_ms = 33;
+
+    def set_key_repeat(self, enabled=True, delay_ms=None, interval_ms=None):
+        self.key_repeat_enabled = bool(enabled);
+        if delay_ms is not None:
+            self.key_repeat_delay_ms = max(0, int(delay_ms));
+        if interval_ms is not None:
+            self.key_repeat_interval_ms = max(1, int(interval_ms));
+        from .keyrepeat import disable_key_repeat, enable_key_repeat;
+        if self.key_repeat_enabled:
+            return enable_key_repeat(self.key_repeat_delay_ms, self.key_repeat_interval_ms);
+        disable_key_repeat();
+        return 0, 0;
 
     def request_redraw(self):
         self._redraw_requested = True;
@@ -276,17 +291,24 @@ class GraphicalApplicationBackend:
             return True;
         if event.type == getattr(pygame, "WINDOWFOCUSLOST", -1):
             self._left_down = False;
+            from .keyrepeat import disable_key_repeat;
+            disable_key_repeat();
+            return False;
+        if event.type == getattr(pygame, "WINDOWFOCUSGAINED", -1):
+            self.set_key_repeat(self.key_repeat_enabled);
             return False;
         if event.type == pygame.KEYDOWN:
-            translated = pygame_key_to_sum(event, pygame, self.Key, self.KeyEvent);
+            action = "repeat" if bool(getattr(event, "repeated", False)) else "press";
+            translated = pygame_key_to_sum(event, pygame, self.Key, self.KeyEvent, action=action);
             return bool(translated is not None and self.application.dispatch(translated));
         if event.type == pygame.KEYUP:
             translated = pygame_key_to_sum(event, pygame, self.Key, self.KeyEvent, action="release");
             return bool(translated is not None and self.application.dispatch(translated));
         if event.type == pygame.TEXTINPUT:
             dirty = False;
+            action = "repeat" if bool(getattr(event, "repeated", False)) else "press";
             for char in str(getattr(event, "text", "")):
-                dirty = self.application.dispatch(self.KeyEvent(char.lower(), text=char)) or dirty;
+                dirty = self.application.dispatch(self.KeyEvent(char.lower(), text=char, action=action)) or dirty;
             return dirty;
         if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION):
             translated = self._mouse_event(event);
@@ -320,7 +342,8 @@ class GraphicalApplicationBackend:
                 pass;
             self.screen = pygame.display.set_mode((int(width), int(height)), pygame.RESIZABLE);
             pygame.display.set_caption(self.title);
-            pygame.key.set_repeat(250, 31);
+            self.set_key_repeat(True, 250, 33);
+            from .keyrepeat import get_events;
             pygame.key.start_text_input();
             self.clock = pygame.time.Clock();
             self._update_grid(*self.screen.get_size(), notify=True);
@@ -331,7 +354,7 @@ class GraphicalApplicationBackend:
             while self.application.running:
                 self.clock.tick(self.fps);
                 dirty = self.application._process_external_requests() or dirty;
-                for event in pygame.event.get():
+                for event in get_events():
                     dirty = self._dispatch_pygame(event) or dirty;
                 for callback in list(self.application._idle_callbacks):
                     try:
@@ -348,6 +371,11 @@ class GraphicalApplicationBackend:
         finally:
             self.application._active_gui_backend = None;
             self.application._run_thread_ident = None;
+            try:
+                from .keyrepeat import disable_key_repeat;
+                disable_key_repeat();
+            except Exception:
+                pass;
             try:
                 pygame.key.stop_text_input();
             except Exception:

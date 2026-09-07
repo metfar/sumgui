@@ -1157,7 +1157,7 @@ class UDGCanvas(Widget):
 class UDGApp:
     def __init__(self):
         pygame.init();
-        enable_key_repeat(250, 31);
+        enable_key_repeat(250, 33);
         set_default_icon();
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT));
         pygame.display.set_caption("Spectrum UDG Painter");

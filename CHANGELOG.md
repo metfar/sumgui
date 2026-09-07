@@ -1,3 +1,9 @@
+# 0.2.0a20
+
+- Unified graphical application key repeat with the shared sumGUI repeat controller and matched `xset r rate 250 30`: 250 ms initial delay and a 33 ms interval (approximately 30 Hz).
+- Cleared held-repeat state on focus loss and suspended graphical repetition until focus returns, preventing a missed `KEYUP` from producing a stuck repeating key.
+- Synthetic repeats are now marked as `repeat` actions while physical releases remain `release`, allowing runtimes such as sumBASIC to suppress repeats without losing exact key-up events.
+
 # 0.2.0a19
 
 - Exposed the shared sumCore `beep`, `sound`, `play`, `stop_audio`, and `wait_audio` API without duplicating synthesis in SumGUI.

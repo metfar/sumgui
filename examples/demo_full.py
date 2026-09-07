@@ -48,7 +48,7 @@ WIDTH = int(BASE_WIDTH * (HEIGHT / BASE_HEIGHT));
 
 def main():
     pygame.init();
-    enable_key_repeat(250, 31);
+    enable_key_repeat(250, 33);
     set_default_icon();
     screen = pygame.display.set_mode(fit_window_size(WIDTH, HEIGHT));
     physical_width, physical_height = screen.get_size();
