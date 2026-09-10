@@ -26,7 +26,7 @@
 # before the top-level package has forced pygame to load.
 import pygame;
 
-__version__ = "0.2.0a21";
+__version__ = "0.2.0a22";
 
 from .audio import audio_engine, beep, midi_frequency, midi_sound, play, set_audio_engine, sound, stop_audio, tone_pcm_bytes, tone_sound, tone_wav_bytes, wait_audio;
 

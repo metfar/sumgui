@@ -1,3 +1,7 @@
+# 0.2.0a22
+
+- Ensured the packaged polyphonic piano example installs the SUM Sigma icon before creating its direct Pygame window, keeping example-window behavior consistent with other direct sumGUI applications.
+
 # 0.2.0a21
 
 - Added `tone_sound()` / `midi_sound()` adapters that build Pygame `Sound` objects from the canonical sumCore/BASIC PCM generator rather than duplicating oscillator code in GUI applications.

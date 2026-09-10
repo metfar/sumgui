@@ -32,6 +32,7 @@ import pygame;
 
 from sumpy import midi_frequency;
 from sumgui.audio import tone_sound;
+from sumgui.display import set_default_icon;
 
 
 SAMPLE_RATE = 48000;
@@ -268,6 +269,7 @@ def main() -> None:
 
     pygame.mixer.pre_init(frequency=SAMPLE_RATE, size=-16, channels=1, buffer=512);
     pygame.init();
+    set_default_icon();
 
     total_keys = len(KEYS_LEFT) + len(KEYS_RIGHT);
     scale = build_scale(args.base_midi, n_notes=total_keys);
