@@ -16,10 +16,11 @@ import sys;
 import pygame;
 
 from .. import __version__;
-from ..dialogs import _dialog_events, input_box, message_box, question_box;
+from ..dialogs import _dialog_events, form_box, input_box, message_box, question_box;
 from ..display import fit_window_size, set_default_icon;
 from ..widgets import Button, Panel, draw_clipped_text;
 from ..theme import make_theme;
+from ..resourceio import load_resource_dialog;
 
 
 def _values(text):
@@ -37,6 +38,7 @@ def build_parser():
     mode.add_argument("--yesno", metavar="TEXT");
     mode.add_argument("--entry", metavar="TEXT");
     mode.add_argument("--demo", action="store_true", help="open an interactive launcher demonstrating graphical dialog modes");
+    mode.add_argument("--resource", metavar="FILE", help="build a graphical create/update/search form from a sum.resource/1 JSON schema");
     parser.add_argument("--title", default="sumgdialog");
     parser.add_argument("--default", default="");
     parser.add_argument("--max-length", type=int, default=-1);
@@ -45,6 +47,8 @@ def build_parser():
     parser.add_argument("--case-sensitive", action="store_true");
     parser.add_argument("--confirm", dest="confirm", action="store_true", default=True);
     parser.add_argument("--no-confirm", dest="confirm", action="store_false");
+    parser.add_argument("--operation", choices=("create", "update", "search"), default="create", help="operation used by --resource; default create");
+    parser.add_argument("--values", default=None, help="JSON object or JSON file with initial values for --resource");
     parser.add_argument("--theme", default="ZX");
     parser.add_argument("--width", type=int, default=720);
     parser.add_argument("--height", type=int, default=480);
@@ -149,6 +153,13 @@ def main(argv=None):
     try:
         if args.demo:
             return _run_demo(screen, clock, theme);
+        if args.resource is not None:
+            import json;
+            spec = load_resource_dialog(args.resource, operation=args.operation, values=args.values, theme=args.theme, title=(args.title if args.title != "sumgdialog" else None));
+            value = form_box(screen, clock, spec, theme=theme);
+            if value is None: return 1;
+            sys.stdout.write(json.dumps(value, ensure_ascii=False, sort_keys=True) + "\n");
+            return 0;
         if args.entry is not None:
             value = input_box(
                 screen, clock, args.title, args.entry, default_text=args.default, theme=theme,

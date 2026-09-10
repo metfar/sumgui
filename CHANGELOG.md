@@ -1,3 +1,10 @@
+# 0.2.0a23
+
+- Added backend-neutral resource-form loading and `sumgdialog --resource/--operation/--values` for graphical create/update/search forms generated from `sumui.ResourceSchema`.
+- Added a complete user-space CRUD/List/Search/Import/Export “My Collection” example driven through `sumgdialog`.
+- Added the tabbed `suminfo --gui` frontend with lazy summary/detail collection.
+- Added the graphical form renderer used by resource dialogs, including text, choice and boolean controls with validation.
+
 # 0.2.0a22
 
 - Ensured the packaged polyphonic piano example installs the SUM Sigma icon before creating its direct Pygame window, keeping example-window behavior consistent with other direct sumGUI applications.

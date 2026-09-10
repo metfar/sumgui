@@ -90,6 +90,15 @@ python examples/components/demo_all.py
 sumgdialog --demo
 ```
 
+`sumgdialog` also consumes the backend-neutral `sum.resource/1` schema used by `sumdialog`:
+
+```bash
+sumgdialog --resource examples/sumgdialog/my_collection.resource.json --operation create
+sumgdialog --resource examples/sumgdialog/my_collection.resource.json --operation update --values '{"id":"1","title":"Dune"}'
+```
+
+A complete user-space CRUD/List/Search/Import/Export example lives in `examples/sumgdialog/resource_catalog.py`.  Its data is stored under the current user's data directory by default; the example never requires root/Administrator privileges.
+
 
 ```bash
 python examples/demo_bgi-like_canvas.py 

@@ -1,0 +1,16 @@
+{
+  "schema": "sum.resource/1",
+  "name": "my_collection",
+  "title": "My Collection",
+  "description": "A small personal collection stored in your user profile.",
+  "key": "id",
+  "capabilities": ["create", "read", "update", "delete", "list", "search", "import", "export"],
+  "fields": [
+    {"name": "id", "label": "ID", "kind": "entry", "default": "", "required": false},
+    {"name": "title", "label": "Title", "kind": "entry", "default": "", "required": true, "max_length": 80},
+    {"name": "type", "label": "Type", "kind": "combo", "default": "Book", "options": ["Book", "Game", "Music", "Movie", "Other"]},
+    {"name": "rating", "label": "Rating", "kind": "combo", "default": "3", "options": ["1", "2", "3", "4", "5"]},
+    {"name": "finished", "label": "Finished", "kind": "boolean", "default": false},
+    {"name": "notes", "label": "Notes", "kind": "entry", "default": "", "max_length": 120}
+  ]
+}

@@ -43,6 +43,7 @@ examples/components/demo_slider.py
 examples/components/demo_terminal.py
 examples/components/demo_textarea.py
 examples/components/demo_textinput.py
+examples/sumgdialog/resource_catalog.py
 sumgui/__init__.py
 sumgui/application_backend.py
 sumgui/audio.py
@@ -61,6 +62,7 @@ sumgui/eventbridge.py
 sumgui/graphics.py
 sumgui/keymap.py
 sumgui/keyrepeat.py
+sumgui/resourceio.py
 sumgui/scale.py
 sumgui/tables.py
 sumgui/textscreen.py
@@ -75,12 +77,14 @@ sumgui.egg-info/requires.txt
 sumgui.egg-info/top_level.txt
 sumgui/tools/__init__.py
 sumgui/tools/gdialog.py
+sumgui/tools/info_view.py
 tests/test_charts_contract.py
 tests/test_conio_contract.py
 tests/test_graphics_window_contract.py
 tests/test_r10_contracts.py
 tests/test_r202_layers.py
 tests/test_r202_textscreen.py
+tests/test_resource_dialog.py
 udg_painter_reborn/3x3.ico
 udg_painter_reborn/6x6.ico
 udg_painter_reborn/LICENSE

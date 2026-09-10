@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: sumgui
-Version: 0.2.0a22
+Version: 0.2.0a23
 Summary: A tiny retro-flavored GUI toolkit for Pygame.
 Author: William Martinez Bas
 Author-email: William Martinez Bas <metfar@gmail.com>
@@ -13,8 +13,8 @@ Classifier: Topic :: Software Development :: User Interfaces
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: sumcore>=0.1.0a4
-Requires-Dist: sumui>=0.1.0a13
+Requires-Dist: sumcore>=0.1.0a13
+Requires-Dist: sumui>=0.1.0a16
 Requires-Dist: pygame>=2.0
 Provides-Extra: matplotlib
 Requires-Dist: matplotlib>=3.7; extra == "matplotlib"
@@ -123,6 +123,15 @@ python examples/components/demo_all.py
 ```bash
 sumgdialog --demo
 ```
+
+`sumgdialog` also consumes the backend-neutral `sum.resource/1` schema used by `sumdialog`:
+
+```bash
+sumgdialog --resource examples/sumgdialog/my_collection.resource.json --operation create
+sumgdialog --resource examples/sumgdialog/my_collection.resource.json --operation update --values '{"id":"1","title":"Dune"}'
+```
+
+A complete user-space CRUD/List/Search/Import/Export example lives in `examples/sumgdialog/resource_catalog.py`.  Its data is stored under the current user's data directory by default; the example never requires root/Administrator privileges.
 
 
 ```bash
