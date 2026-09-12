@@ -305,11 +305,18 @@ class GraphicalApplicationBackend:
             translated = pygame_key_to_sum(event, pygame, self.Key, self.KeyEvent, action="release");
             return bool(translated is not None and self.application.dispatch(translated));
         if event.type == pygame.TEXTINPUT:
-            dirty = False;
+            # SDL may deliver a paste as one TEXTINPUT event containing a long
+            # Unicode string.  Dispatch it as one logical text insertion.
+            # Expanding it into one KeyEvent per character makes TextEditor
+            # rebuild/snapshot the document for every character and is
+            # painfully slow on Android.  Single-key typing and typematic
+            # repeats still arrive here as one-character strings.
+            text = str(getattr(event, "text", ""));
+            if not text:
+                return False;
             action = "repeat" if bool(getattr(event, "repeated", False)) else "press";
-            for char in str(getattr(event, "text", "")):
-                dirty = self.application.dispatch(self.KeyEvent(char.lower(), text=char, action=action)) or dirty;
-            return dirty;
+            key = text.lower() if len(text) == 1 else "";
+            return bool(self.application.dispatch(self.KeyEvent(key, text=text, action=action)));
         if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION):
             translated = self._mouse_event(event);
             return bool(translated is not None and self.application.dispatch(translated));

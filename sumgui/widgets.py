@@ -1569,8 +1569,34 @@ class TextArea(Widget):
     def insert_text(self, text):
         if not self.editable:
             return;
+        text = str(text).replace("\r\n", "\n").replace("\r", "\n");
+        if not text:
+            return;
         if self.has_selection():
             self.delete_selection();
+        # Fast path for the normal unbounded editor case.  Android/SDL may
+        # deliver an entire paste in TEXTINPUT; inserting each character by
+        # slicing the current line repeatedly turns a paste into quadratic
+        # work.  Splice the whole string once instead.
+        if self.max_cols == -1 and self.max_lines == -1:
+            if not self.multiline:
+                text = text.replace("\n", "");
+            line = self.lines[self.cursor_row];
+            prefix = line[:self.cursor_col];
+            suffix = line[self.cursor_col:];
+            parts = text.split("\n");
+            if len(parts) == 1:
+                self.lines[self.cursor_row] = prefix + parts[0] + suffix;
+                self.cursor_col += len(parts[0]);
+            else:
+                replacement = [prefix + parts[0]] + parts[1:-1] + [parts[-1] + suffix];
+                self.lines[self.cursor_row:self.cursor_row + 1] = replacement;
+                self.cursor_row += len(parts) - 1;
+                self.cursor_col = len(parts[-1]);
+            self.clear_selection();
+            self._invalidate_syntax();
+            self.ensure_visible();
+            return;
         for char in text:
             if char == "\n":
                 self.newline();

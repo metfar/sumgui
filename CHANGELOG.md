@@ -1,4 +1,4 @@
-# 0.2.0a23
+# 0.2.0a24
 
 - Added backend-neutral resource-form loading and `sumgdialog --resource/--operation/--values` for graphical create/update/search forms generated from `sumui.ResourceSchema`.
 - Added a complete user-space CRUD/List/Search/Import/Export “My Collection” example driven through `sumgdialog`.

@@ -102,8 +102,13 @@ class KeyRepeatState:
             self.last_keydown_key = None;
 
     def textinput(self, event):
-        if self.last_keydown_key in self.pressed:
-            self.pressed[self.last_keydown_key]["text"] = getattr(event, "text", "");
+        if self.last_keydown_key not in self.pressed:
+            return;
+        text = str(getattr(event, "text", ""));
+        # Typematic belongs to physical keys.  A multi-character TEXTINPUT is
+        # typically IME/paste input and must never become the repeated payload
+        # of whichever key happened to be pressed most recently.
+        self.pressed[self.last_keydown_key]["text"] = text if len(text) == 1 else "";
 
     def reset(self):
         self.pressed = {};

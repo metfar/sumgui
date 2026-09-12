@@ -427,3 +427,87 @@ def test_application_backend_marks_synthetic_repeat_events_as_repeat_actions():
     event = types.SimpleNamespace(type=pygame.KEYDOWN, key=pygame.K_LEFT, mod=0, repeated=True);
     assert backend._dispatch_pygame(event) is True;
     assert received[-1].action == "repeat";
+
+
+def test_application_backend_dispatches_bulk_textinput_once():
+    import importlib.machinery;
+    import importlib.util;
+    from pathlib import Path;
+    import sys;
+    import types;
+
+    pygame = types.ModuleType("pygame");
+    pygame.__spec__ = importlib.machinery.ModuleSpec("pygame", loader=None);
+    pygame.FINGERDOWN = 1; pygame.FINGERMOTION = 2; pygame.FINGERUP = 3;
+    pygame.MOUSEBUTTONDOWN = 4; pygame.MOUSEBUTTONUP = 5; pygame.MOUSEMOTION = 6;
+    pygame.MOUSEWHEEL = 7; pygame.KEYDOWN = 8; pygame.KEYUP = 9; pygame.TEXTINPUT = 10;
+    pygame.QUIT = 11; pygame.VIDEORESIZE = 12; pygame.WINDOWRESIZED = 13;
+    pygame.WINDOWSIZECHANGED = 14; pygame.WINDOWFOCUSLOST = 15; pygame.WINDOWFOCUSGAINED = 16;
+    pygame.KMOD_CTRL = 1; pygame.KMOD_ALT = 2; pygame.KMOD_SHIFT = 4;
+    pygame.key = types.SimpleNamespace(get_mods=lambda: 0, name=lambda key: "");
+    pygame.mouse = types.SimpleNamespace(get_pos=lambda: (0, 0));
+    sys.modules["pygame"] = pygame;
+    _package_stub();
+    root = Path(__file__).resolve().parents[1] / "sumgui";
+    path = root / "application_backend.py";
+    spec = importlib.util.spec_from_file_location("sumgui.application_backend", path);
+    module = importlib.util.module_from_spec(spec);
+    sys.modules["sumgui.application_backend"] = module;
+    spec.loader.exec_module(module);
+
+    received = [];
+    backend = module.GraphicalApplicationBackend.__new__(module.GraphicalApplicationBackend);
+    backend.pygame = pygame;
+    backend.KeyEvent = lambda key, **kwargs: types.SimpleNamespace(key=key, **kwargs);
+    backend.MouseEvent = lambda *args, **kwargs: types.SimpleNamespace(args=args, **kwargs);
+    backend.application = types.SimpleNamespace(dispatch=lambda event: received.append(event) or True, stop=lambda: None);
+    backend.screen = types.SimpleNamespace(get_size=lambda: (800, 600), get_width=lambda: 800, get_height=lambda: 600);
+    backend.cell_width = 10; backend.cell_height = 20; backend._left_down = False;
+    text = "Paste rápido: ñ → λ\nsegunda línea";
+    event = types.SimpleNamespace(type=pygame.TEXTINPUT, text=text, repeated=False);
+    assert backend._dispatch_pygame(event) is True;
+    assert len(received) == 1;
+    assert received[0].key == "";
+    assert received[0].text == text;
+    assert received[0].action == "press";
+
+
+def test_keyrepeat_never_turns_bulk_textinput_into_typematic_payload():
+    import importlib.machinery;
+    import importlib.util;
+    from pathlib import Path;
+    import sys;
+    import types;
+
+    pygame = types.ModuleType("pygame");
+    pygame.__spec__ = importlib.machinery.ModuleSpec("pygame", loader=None);
+    for name, value in {
+        "K_BACKSPACE":1,"K_DELETE":2,"K_RETURN":3,"K_KP_ENTER":4,"K_TAB":5,"K_LEFT":6,"K_RIGHT":7,
+        "K_UP":8,"K_DOWN":9,"K_HOME":10,"K_END":11,"K_PAGEUP":12,"K_PAGEDOWN":13,"K_SPACE":14,
+        "K_LSHIFT":20,"K_RSHIFT":21,"K_LCTRL":22,"K_RCTRL":23,"K_LALT":24,"K_RALT":25,
+        "K_CAPSLOCK":26,"K_NUMLOCKCLEAR":27,"KEYDOWN":30,"KEYUP":31,"TEXTINPUT":32,
+        "WINDOWFOCUSLOST":33,"ACTIVEEVENT":34,
+    }.items(): setattr(pygame, name, value);
+    pygame.key = types.SimpleNamespace(get_mods=lambda: 0, name=lambda key: "a", set_repeat=lambda *_args: None);
+    pygame.time = types.SimpleNamespace(get_ticks=lambda: 0);
+    pygame.event = types.SimpleNamespace(Event=lambda kind, **kwargs: types.SimpleNamespace(type=kind, **kwargs), get=lambda: []);
+    sys.modules["pygame"] = pygame;
+    _package_stub();
+    root = Path(__file__).resolve().parents[1] / "sumgui";
+    path = root / "keyrepeat.py";
+    spec = importlib.util.spec_from_file_location("sumgui.keyrepeat", path);
+    module = importlib.util.module_from_spec(spec);
+    sys.modules["sumgui.keyrepeat"] = module;
+    spec.loader.exec_module(module);
+    state = module.KeyRepeatState(delay_ms=0, interval_ms=1, enabled=True);
+    down = types.SimpleNamespace(type=pygame.KEYDOWN, key=99, unicode="a", mod=0);
+    state.keydown(down, 0);
+    state.textinput(types.SimpleNamespace(type=pygame.TEXTINPUT, text="bulk paste"));
+    assert state.pressed[99]["text"] == "";
+
+
+def test_sumgui_hides_pygame_support_prompt_before_import():
+    from pathlib import Path;
+    source = (Path(__file__).resolve().parents[1] / "sumgui" / "__init__.py").read_text(encoding="utf-8");
+    assert 'os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")' in source;
+    assert source.index('os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")') < source.index("import pygame;");

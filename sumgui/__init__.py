@@ -24,9 +24,16 @@
 # PyDroid3 bootstrap: load pygame before SumGUI submodules.
 # Some Android/PyDroid3 builds fail if internal widgets import pygame
 # before the top-level package has forced pygame to load.
+#
+# Pygame writes its version/community support prompt to stdout at import time.
+# SUM applications are not pygame demos, so use pygame's documented switch
+# rather than redirecting stdout/stderr (which could hide real application
+# output or errors).  setdefault() still lets a caller explicitly override it.
+import os;
+os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1");
 import pygame;
 
-__version__ = "0.2.0a23";
+__version__ = "0.2.0a24";
 
 from .audio import audio_engine, beep, midi_frequency, midi_sound, play, set_audio_engine, sound, stop_audio, tone_pcm_bytes, tone_sound, tone_wav_bytes, wait_audio;
 
