@@ -692,6 +692,170 @@ class Panel(Widget):
         screen.set_clip(previous_clip);
 
 
+class ScrollPanel(Widget):
+    """Scrollable container with a fixed viewport and vertical scrollbar.
+
+    Child rectangles use content-local coordinates: (0, 0) is the top-left
+    of the scrollable document, not the screen.  This keeps layouts stable
+    while the viewport moves over them.
+    """
+    def __init__(self, rect, content_height=None, theme=None, scrollbar_width=16, wheel_step=48, tab_index=0):
+        super().__init__(rect, focusable=True, tab_index=tab_index, accepts_tab=True);
+        self.theme=theme or DEFAULT_THEME;
+        self.scrollbar_width=max(12,int(scrollbar_width));
+        self.wheel_step=max(1,int(wheel_step));
+        self.content_width=max(1,self.rect.width-self.scrollbar_width-4);
+        self.content_height=max(self.rect.height,int(content_height or self.rect.height));
+        self.content=Panel(pygame.Rect(0,0,self.content_width,self.content_height),self.theme);
+        self.scroll_y=0;
+        self.drag_scrollbar=False;
+        self.drag_scroll_y=0;
+        self.drag_scroll_offset=0;
+
+    @property
+    def children(self):
+        return self.content.children;
+
+    @property
+    def focused_widget(self):
+        return self.content.focused_widget;
+
+    def add(self,widget):
+        return self.content.add(widget);
+
+    def set_content_height(self,height):
+        self.content_height=max(self.rect.height,int(height));
+        self.content.rect.height=self.content_height;
+        self.scroll_to(self.scroll_y);
+        return self.content_height;
+
+    def max_scroll(self):
+        return max(0,int(self.content_height-self.rect.height));
+
+    def scroll_to(self,value):
+        self.scroll_y=max(0,min(self.max_scroll(),int(round(value))));
+        return self.scroll_y;
+
+    def scroll_by(self,delta):
+        return self.scroll_to(self.scroll_y+int(round(delta)));
+
+    def scrollbar_rect(self):
+        return pygame.Rect(self.rect.right-self.scrollbar_width,self.rect.y,self.scrollbar_width,self.rect.height);
+
+    def scrollbar_thumb_rect(self):
+        bar=self.scrollbar_rect(); maximum=self.max_scroll();
+        if maximum<=0: return pygame.Rect(bar.x+2,bar.y+2,max(1,bar.width-4),max(1,bar.height-4));
+        thumb_h=max(24,int(round(bar.height*(self.rect.height/max(1,self.content_height))))); thumb_h=min(bar.height-4,thumb_h);
+        travel=max(1,bar.height-4-thumb_h); y=bar.y+2+int(round(travel*(self.scroll_y/maximum)));
+        return pygame.Rect(bar.x+2,y,max(1,bar.width-4),thumb_h);
+
+    def _scrollbar_drag_to(self,y):
+        bar=self.scrollbar_rect(); thumb=self.scrollbar_thumb_rect(); maximum=self.max_scroll(); travel=max(1,bar.height-4-thumb.height);
+        if maximum<=0: return self.scroll_to(0);
+        delta=int(y)-self.drag_scroll_y; return self.scroll_to(self.drag_scroll_offset+round((delta/travel)*maximum));
+
+    def ensure_widget_visible(self,widget,margin=10):
+        if widget is None: return self.scroll_y;
+        rect=pygame.Rect(widget.get_rect()); top=int(rect.top)-int(margin); bottom=int(rect.bottom)+int(margin);
+        if top<self.scroll_y: self.scroll_to(top);
+        elif bottom>self.scroll_y+self.rect.height: self.scroll_to(bottom-self.rect.height);
+        return self.scroll_y;
+
+    def set_focus(self,focused=True):
+        super().set_focus(focused);
+        if not focused and self.content.focused_widget is not None: self.content.focused_widget.set_focus(False);
+        elif focused and self.content.focused_widget is not None: self.content.focused_widget.set_focus(True);
+
+    def cancel_pointer(self):
+        self.drag_scrollbar=False; self.content.cancel_pointer_capture(); return True;
+
+    def _pointer_position(self,event):
+        if hasattr(event,'pos'): return tuple(event.pos);
+        try: return tuple(pygame.mouse.get_pos());
+        except Exception: return None;
+
+    def _local_event(self,event,pos=None):
+        attrs=dict(getattr(event,'dict',{}) or {});
+        if pos is None: pos=self._pointer_position(event);
+        if pos is not None:
+            attrs['pos']=(int(pos[0])-self.rect.x,int(pos[1])-self.rect.y+self.scroll_y);
+        try: return pygame.event.Event(event.type,attrs);
+        except Exception:
+            class LocalEvent: pass
+            value=LocalEvent(); value.type=event.type;
+            for key,item in attrs.items(): setattr(value,key,item);
+            return value;
+
+    def handle_event(self,event):
+        # Keep scrollbar capture independent of child pointer capture.
+        if event.type==pygame.MOUSEBUTTONDOWN:
+            pos=self._pointer_position(event);
+            if pos is not None and self.scrollbar_rect().collidepoint(pos):
+                if getattr(event,'button',1)==1:
+                    thumb=self.scrollbar_thumb_rect();
+                    if thumb.collidepoint(pos):
+                        self.drag_scrollbar=True; self.drag_scroll_y=int(pos[1]); self.drag_scroll_offset=self.scroll_y;
+                    elif pos[1]<thumb.y: self.scroll_by(-self.rect.height);
+                    else: self.scroll_by(self.rect.height);
+                return True;
+            if pos is not None and self.rect.collidepoint(pos):
+                before=self.content.focused_widget; handled=self.content.handle_event(self._local_event(event,pos));
+                if self.content.focused_widget is not before: self.ensure_widget_visible(self.content.focused_widget);
+                if not handled and getattr(event,'button',0)==4: self.scroll_by(-self.wheel_step); return True;
+                if not handled and getattr(event,'button',0)==5: self.scroll_by(self.wheel_step); return True;
+                return bool(handled or self.rect.collidepoint(pos));
+            return False;
+        if event.type==pygame.MOUSEMOTION:
+            if self.drag_scrollbar: self._scrollbar_drag_to(self._pointer_position(event)[1]); return True;
+            if self.content.mouse_capture_widget is not None: return self.content.handle_event(self._local_event(event));
+            pos=self._pointer_position(event);
+            if pos is not None and self.rect.collidepoint(pos): return self.content.handle_event(self._local_event(event,pos));
+            return False;
+        if event.type==pygame.MOUSEBUTTONUP:
+            if self.drag_scrollbar: self.drag_scrollbar=False; return True;
+            if self.content.mouse_capture_widget is not None: return self.content.handle_event(self._local_event(event));
+            pos=self._pointer_position(event);
+            if pos is not None and self.rect.collidepoint(pos): return self.content.handle_event(self._local_event(event,pos));
+            return False;
+        if event.type==pygame.MOUSEWHEEL:
+            pos=self._pointer_position(event);
+            if pos is None or not self.rect.collidepoint(pos): return False;
+            local=self._local_event(event,pos);
+            if self.content.handle_event(local): return True;
+            self.scroll_by(-int(getattr(event,'y',0) or 0)*self.wheel_step); return True;
+        if event.type in (pygame.KEYDOWN,pygame.TEXTINPUT):
+            before=self.content.focused_widget; handled=self.content.handle_event(event); after=self.content.focused_widget;
+            if after is not None and (after is not before or event.type==pygame.KEYDOWN): self.ensure_widget_visible(after);
+            return handled;
+        return False;
+
+    def update(self,dt):
+        self.content.update(dt);
+
+    def draw(self,screen):
+        # Draw the entire content document to an offscreen surface, then expose
+        # the current viewport.  Preferences-sized documents are small enough
+        # that this is simpler and more predictable than mutating child rects.
+        document=pygame.Surface((self.content_width,self.content_height),pygame.SRCALPHA);
+        document.fill(self.theme.panel);
+        previous=self.content.rect; self.content.rect=pygame.Rect(0,0,self.content_width,self.content_height);
+        try:
+            overlays=[];
+            for widget in self.content.children:
+                if widget.visible:
+                    widget.draw(document);
+                    if bool(getattr(widget,'overlay_active',False)): overlays.append(widget);
+            for widget in overlays: widget.draw(document);
+        finally:
+            self.content.rect=previous;
+        area=pygame.Rect(0,self.scroll_y,self.content_width,self.rect.height);
+        screen.blit(document,(self.rect.x,self.rect.y),area);
+        pygame.draw.rect(screen,self.theme.line,self.rect,1,border_radius=6);
+        bar=self.scrollbar_rect(); pygame.draw.rect(screen,self.theme.line,bar);
+        if self.max_scroll()>0:
+            thumb=self.scrollbar_thumb_rect(); pygame.draw.rect(screen,self.theme.button,thumb,border_radius=4); pygame.draw.rect(screen,self.theme.text,thumb,1,border_radius=4);
+
+
 class StatusBar(Widget):
     def __init__(self, rect, font, text="READY", theme=None, zones=None):
         super().__init__(rect, focusable=False);

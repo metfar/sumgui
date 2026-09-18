@@ -28,3 +28,8 @@ def test_monospace_catalog_filters_proportional_fonts():
         @staticmethod
         def SysFont(name,size): return FakeFont(name);
     values=module.system_font_names(FontAPI(),current="mono",monospace_only=True); assert "mono" in values; assert "orator" in values; assert "prop" not in values; assert values==tuple(sorted(values,key=lambda item:(item.casefold(),item)));
+
+
+def test_font_selection_carries_independent_case_weights():
+    module=_module(); value=module.FontSelection("Source Code Pro",False,False,True,0.78,1,2);
+    assert value.family=="Source Code Pro"; assert value.small_caps_scale==0.78; assert value.uppercase_embolden==1; assert value.lowercase_embolden==2;

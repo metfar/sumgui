@@ -1,4 +1,4 @@
-# SumGUI / ΣGUI 0.2.0a27
+# SumGUI / ΣGUI 0.2.0a29
 A tiny, portable and beginner-friendly GUI toolkit for Python and Pygame.
 
 SumGUI is inspired by the spirit of home computing:
@@ -435,3 +435,8 @@ selection = picker.selection()
 ### FontPicker
 
 `FontPicker` provides an alphabetical searchable font combo, filtered popup scrollbar, Bold/Italic/Small Caps modifiers, optional 50–85% Small Caps scale, and an optional live preview. `FontSelection.small_caps_scale` carries the selected scale without changing source text.
+
+
+## FontPicker and scrollable panels (0.2.0a29)
+
+`FontPicker` supports incremental filtering, an internal font-list scrollbar, live preview, Small Caps scale, and independent uppercase/lowercase optical embolden controls.  `ScrollPanel` provides a reusable vertically scrollable container with mouse-wheel, drag-thumb, track paging, keyboard focus visibility, and fixed outer chrome support.

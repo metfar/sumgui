@@ -28,6 +28,7 @@ class FontSelection:
     bold: bool=False;
     italic: bool=False;
     small_caps: bool=False;
+    small_caps_scale: float=0.65;
 
 
 def sort_font_names(names,current="",aliases=("monospace",)):
