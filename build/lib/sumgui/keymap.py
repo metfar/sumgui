@@ -50,3 +50,6 @@ def default_voxel_keymap():
     keymap.bind("confirm", [pygame.K_RETURN, pygame.K_SPACE]);
     keymap.bind("cancel", [pygame.K_ESCAPE]);
     return keymap;
+
+
+from sumui.keyboard import pygame_modifier_state as modifier_state;

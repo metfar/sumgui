@@ -21,27 +21,6 @@
 #  
 #
 
-import pygame;
+from sumui.clipboard import get_clipboard_text, set_clipboard_text;
 
-_INTERNAL_CLIPBOARD = "";
-
-
-def set_clipboard_text(text):
-    global _INTERNAL_CLIPBOARD;
-    _INTERNAL_CLIPBOARD = str(text);
-    try:
-        pygame.scrap.init();
-        pygame.scrap.put(pygame.SCRAP_TEXT, _INTERNAL_CLIPBOARD.encode("utf-8"));
-    except Exception:
-        pass;
-
-
-def get_clipboard_text():
-    try:
-        pygame.scrap.init();
-        data = pygame.scrap.get(pygame.SCRAP_TEXT);
-        if data:
-            return data.decode("utf-8", errors="ignore").rstrip("\x00");
-    except Exception:
-        pass;
-    return _INTERNAL_CLIPBOARD;
+__all__ = ["get_clipboard_text", "set_clipboard_text"];

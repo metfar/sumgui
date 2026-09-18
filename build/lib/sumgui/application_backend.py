@@ -82,10 +82,12 @@ def pygame_key_to_sum(event, pygame, Key, KeyEvent, action="press"):
     Printable text without Ctrl/Alt is intentionally left to TEXTINPUT so
     international keyboards and composed Unicode input keep working.
     """;
+    from sumui.keyboard import pygame_modifier_state;
     modifiers = int(getattr(event, "mod", pygame.key.get_mods()) or 0);
-    ctrl = bool(modifiers & getattr(pygame, "KMOD_CTRL", 0));
-    alt = bool(modifiers & getattr(pygame, "KMOD_ALT", 0));
-    shift = bool(modifiers & getattr(pygame, "KMOD_SHIFT", 0));
+    state = pygame_modifier_state(modifiers, pygame);
+    ctrl = state["ctrl"];
+    alt = state["alt"];
+    shift = state["shift"];
     mapping = _key_map(pygame, Key);
     key = mapping.get(getattr(event, "key", None));
     if key is not None:
@@ -231,10 +233,12 @@ class GraphicalApplicationBackend:
 
     def _mouse_event(self, event):
         pygame = self.pygame;
+        from sumui.keyboard import pygame_modifier_state;
         modifiers = pygame.key.get_mods();
-        ctrl = bool(modifiers & getattr(pygame, "KMOD_CTRL", 0));
-        alt = bool(modifiers & getattr(pygame, "KMOD_ALT", 0));
-        shift = bool(modifiers & getattr(pygame, "KMOD_SHIFT", 0));
+        state = pygame_modifier_state(modifiers, pygame);
+        ctrl = state["ctrl"];
+        alt = state["alt"];
+        shift = state["shift"];
         pos = getattr(event, "pos", (0, 0));
         x = max(0, int(pos[0]) // self.cell_width);
         y = max(0, int(pos[1]) // self.cell_height);

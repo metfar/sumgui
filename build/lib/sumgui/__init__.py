@@ -33,7 +33,7 @@ import os;
 os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1");
 import pygame;
 
-__version__ = "0.2.0a24";
+__version__ = "0.2.0a25";
 
 from .audio import audio_engine, beep, midi_frequency, midi_sound, play, set_audio_engine, sound, stop_audio, tone_pcm_bytes, tone_sound, tone_wav_bytes, wait_audio;
 
