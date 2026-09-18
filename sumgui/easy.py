@@ -34,7 +34,8 @@ from .display import fit_window_size;
 from .scale import Scale;
 from .theme import DEFAULT_THEME, make_theme;
 from .commands import command_help, command_list;
-from .widgets import Button, CanvasArea, Label, Panel, Slider, TextArea, TextInput, TerminalArea, Widget, draw_clipped_text;
+from .fontpicker import FontPicker;
+from .widgets import Button, CanvasArea, CheckBox, Label, Panel, Slider, TextArea, TextInput, TerminalArea, Widget, draw_clipped_text;
 
 _app = None;
 
@@ -386,6 +387,24 @@ def terminal(x, y, w, h, text="", font_size=None, show_v_scrollbar=True, show_h_
     current = app();
     use_font = current.make_font(font_size or current.font_size);
     return current.add(TerminalArea(current.rect(x, y, w, h), use_font, text=text, theme=current.theme, show_v_scrollbar=show_v_scrollbar, show_h_scrollbar=show_h_scrollbar));
+
+
+def checkbox(text, x, y, w=180, h=34, checked=False, do=None, font_size=None):
+    current = app();
+    use_font = current.make_font(font_size or current.font_size);
+    def changed(widget, value):
+        if do is not None:
+            do(value);
+    return current.add(CheckBox(current.rect(x, y, w, h), text, use_font, checked=checked, on_change=changed, theme=current.theme));
+
+
+def fontpicker(x, y, w=440, h=84, family="monospace", bold=False, italic=False, small_caps=False, monospace_only=False, do=None, font_size=None):
+    current = app();
+    use_font = current.make_font(font_size or current.font_size);
+    def changed(widget, selection):
+        if do is not None:
+            do(selection);
+    return current.add(FontPicker(current.rect(x, y, w, h), use_font, family=family, bold=bold, italic=italic, small_caps=small_caps, theme=current.theme, monospace_only=monospace_only, on_change=changed));
 
 
 def slider(label_text, x, y, w, h, minimum=0.0, maximum=1.0, value=0.0, orientation="horizontal", step=None, do=None, font_size=None):

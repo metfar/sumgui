@@ -424,6 +424,65 @@ class Button(Widget):
             draw_clipped_text(screen, self.font, self.text, self.theme.button_text, content_rect, align="center", valign="middle");
 
 
+class CheckBox(Widget):
+    def __init__(self, rect, text, font, checked=False, on_change=None, theme=None, tab_index=0):
+        super().__init__(rect, focusable=True, tab_index=tab_index);
+        self.text = str(text);
+        self.font = font;
+        self.checked = bool(checked);
+        self.on_change = on_change;
+        self.theme = theme or DEFAULT_THEME;
+        self.pressed = False;
+
+    def value(self):
+        return bool(self.checked);
+
+    def set_value(self, checked, notify=False):
+        self.checked = bool(checked);
+        if notify:
+            self.notify();
+        return self.checked;
+
+    def notify(self):
+        if self.on_change is not None:
+            self.on_change(self, self.checked);
+        return self.checked;
+
+    def toggle(self):
+        self.checked = not self.checked;
+        self.notify();
+        return self.checked;
+
+    def handle_event(self, event):
+        if not self.enabled:
+            return False;
+        if event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
+            self.pressed = True;
+            return True;
+        if event.type == pygame.MOUSEBUTTONUP:
+            was_pressed = self.pressed;
+            self.pressed = False;
+            if was_pressed and self.rect.collidepoint(event.pos):
+                self.toggle();
+                return True;
+        if event.type == pygame.KEYDOWN and self.has_focus and event.key in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_SPACE):
+            self.toggle();
+            return True;
+        return False;
+
+    def draw(self, screen):
+        box_size = max(14, min(self.rect.height - 6, self.font.get_height()));
+        box = pygame.Rect(self.rect.x + 2, self.rect.centery - box_size // 2, box_size, box_size);
+        pygame.draw.rect(screen, self.theme.button_alt if self.pressed else self.theme.panel, self.rect, border_radius=5);
+        border = self.theme.cursor if self.has_focus else self.theme.line;
+        pygame.draw.rect(screen, border, box, 2, border_radius=3);
+        if self.checked:
+            inset = max(3, box_size // 4);
+            pygame.draw.rect(screen, getattr(self.theme, "accent", self.theme.cursor), box.inflate(-inset, -inset), border_radius=2);
+        text_rect = pygame.Rect(box.right + 6, self.rect.y, max(1, self.rect.right - box.right - 8), self.rect.height);
+        draw_clipped_text(screen, self.font, self.text, self.theme.text, text_rect, valign="middle");
+
+
 class Panel(Widget):
     def __init__(self, rect, theme=None):
         super().__init__(rect, focusable=False);
@@ -470,6 +529,9 @@ class Panel(Widget):
         return self.focused_widget;
 
     def widget_at_pos(self, pos):
+        for widget in reversed(self.children):
+            if widget.visible and widget.enabled and bool(getattr(widget, "overlay_active", False)) and widget.get_rect().collidepoint(pos):
+                return widget;
         for widget in reversed(self.children):
             if widget.visible and widget.enabled and widget.get_rect().collidepoint(pos):
                 return widget;
@@ -619,9 +681,14 @@ class Panel(Widget):
         pygame.draw.rect(screen, self.theme.line, self.rect, 2, border_radius=8);
         previous_clip = screen.get_clip();
         screen.set_clip(self.rect.inflate(-4, -4));
+        overlays = [];
         for widget in self.children:
             if widget.visible:
                 widget.draw(screen);
+                if bool(getattr(widget, "overlay_active", False)):
+                    overlays.append(widget);
+        for widget in overlays:
+            widget.draw(screen);
         screen.set_clip(previous_clip);
 
 

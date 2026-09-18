@@ -1,3 +1,15 @@
+# 0.2.0a27
+
+- FontPicker dropdowns now include a vertical scrollbar tied to the filtered result set.
+- Mouse wheel, thumb dragging, track page clicks, PageUp/PageDown and Home/End navigate long font catalogs.
+
+# 0.2.0a26
+
+- Add reusable `FontPicker` widget with alphabetical families and incremental case-insensitive substring filtering.
+- Add reusable `CheckBox` widget.
+- `FontPicker` exposes Bold, Italic and Small Caps modifiers and can restrict the catalog to monospaced fonts.
+- Add `fontpicker()` and `checkbox()` helpers to `sumgui.easy`.
+
 # 0.2.0a25
 
 - Route Copy/Paste through the shared sumUI system clipboard service instead of relying on `pygame.scrap`.

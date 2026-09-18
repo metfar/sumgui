@@ -1,4 +1,4 @@
-# SumGUI / ΣGUI 0.2.0a25
+# SumGUI / ΣGUI 0.2.0a27
 A tiny, portable and beginner-friendly GUI toolkit for Python and Pygame.
 
 SumGUI is inspired by the spirit of home computing:
@@ -419,3 +419,15 @@ stop_audio();
 `sumgui.audio.tone_sound()` and `midi_sound()` create Pygame `Sound` objects from the exact sine/PCM generator owned by `sumcore`, so graphical instruments do not maintain a second oscillator implementation.
 
 See `examples/piano_sum.py` for the polyphonic keyboard example.
+
+## FontPicker
+
+`FontPicker` is a reusable editable font selector. Font families are unique and sorted alphabetically using case-insensitive ordering. Typing any substring filters the open list immediately, so `mono`, `code`, `orat`, etc. narrow large system font catalogs without scrolling. The widget carries independent `Bold`, `Italic`, and `Small Caps` modifiers and can be configured with `monospace_only=True` for terminal/editor use. The dropdown has a vertical scrollbar over the currently filtered result set; the mouse wheel, scrollbar thumb/track, PageUp/PageDown, Home and End all navigate it.
+
+```python
+from sumgui.easy import fontpicker
+
+picker = fontpicker(40, 40, 460, 84, family="monospace", monospace_only=True)
+selection = picker.selection()
+# FontSelection(family=..., bold=..., italic=..., small_caps=...)
+```

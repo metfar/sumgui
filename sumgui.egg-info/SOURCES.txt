@@ -38,6 +38,7 @@ examples/components/demo_button.py
 examples/components/demo_canvas.py
 examples/components/demo_chart.py
 examples/components/demo_datetime.py
+examples/components/demo_fontpicker.py
 examples/components/demo_label.py
 examples/components/demo_slider.py
 examples/components/demo_terminal.py
@@ -59,6 +60,8 @@ sumgui/dialogs.py
 sumgui/display.py
 sumgui/easy.py
 sumgui/eventbridge.py
+sumgui/fontcatalog.py
+sumgui/fontpicker.py
 sumgui/graphics.py
 sumgui/keymap.py
 sumgui/keyrepeat.py
@@ -80,6 +83,8 @@ sumgui/tools/gdialog.py
 sumgui/tools/info_view.py
 tests/test_charts_contract.py
 tests/test_conio_contract.py
+tests/test_fontcatalog.py
+tests/test_fontpicker.py
 tests/test_graphics_window_contract.py
 tests/test_keyboard_altgr.py
 tests/test_r10_contracts.py
