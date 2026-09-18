@@ -1,4 +1,4 @@
-# SumGUI / ΣGUI 0.2.0a1
+# SumGUI / ΣGUI 0.2.0a25
 A tiny, portable and beginner-friendly GUI toolkit for Python and Pygame.
 
 SumGUI is inspired by the spirit of home computing:

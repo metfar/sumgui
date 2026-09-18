@@ -16,14 +16,16 @@ from sumui import UIEvent;
 
 
 def _mods(mod):
-    from sumui.keyboard import pygame_modifier_state;
-    state = pygame_modifier_state(mod, pygame);
     result = [];
-    for name in ("shift", "ctrl", "alt", "altgr"):
-        if state.get(name):
+    checks = (
+        (getattr(pygame, "KMOD_SHIFT", 0), "shift"),
+        (getattr(pygame, "KMOD_CTRL", 0), "ctrl"),
+        (getattr(pygame, "KMOD_ALT", 0), "alt"),
+        (getattr(pygame, "KMOD_META", 0), "meta"),
+    );
+    for mask, name in checks:
+        if mask and int(mod or 0) & mask:
             result.append(name);
-    if state.get("gui"):
-        result.append("meta");
     return tuple(result);
 
 

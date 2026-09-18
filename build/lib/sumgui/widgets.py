@@ -1778,11 +1778,9 @@ class TextArea(Widget):
             self.insert_text(event.text);
             return True;
         if event.type == pygame.KEYDOWN:
-            from sumui.keyboard import pygame_modifier_state;
             mods = getattr(event, "mod", pygame.key.get_mods());
-            state = pygame_modifier_state(mods, pygame);
-            ctrl = state["ctrl"];
-            shift = state["shift"];
+            ctrl = bool(mods & pygame.KMOD_CTRL);
+            shift = bool(mods & pygame.KMOD_SHIFT);
             if ctrl and event.key in (pygame.K_c, pygame.K_INSERT):
                 self.copy_text();
                 return True;

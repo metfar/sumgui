@@ -81,6 +81,7 @@ sumgui/tools/info_view.py
 tests/test_charts_contract.py
 tests/test_conio_contract.py
 tests/test_graphics_window_contract.py
+tests/test_keyboard_altgr.py
 tests/test_r10_contracts.py
 tests/test_r202_layers.py
 tests/test_r202_textscreen.py

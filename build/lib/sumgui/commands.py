@@ -21,6 +21,23 @@
 #  
 #
 
-from sumui.clipboard import get_clipboard_text, set_clipboard_text;
+COMMANDS = [
+    ("Tab", "Move focus to the next widget."),
+    ("Shift+Tab", "Move focus to the previous widget."),
+    ("Enter / Space", "Activate focused buttons or selected actions."),
+    ("Ctrl+C / Ctrl+Insert", "Copy text from focused text widget."),
+    ("Ctrl+X / Shift+Delete", "Cut text from focused text widget."),
+    ("Ctrl+V / Shift+Insert", "Paste text into focused text widget."),
+    ("Arrows", "Move cursor, list selection, grid cursor, sliders or chart points."),
+    ("Home / End", "Jump to first/last position where supported."),
+    ("PageUp / PageDown", "Move by pages where supported."),
+    ("Escape", "Close demos/dialogs or exit app."),
+];
 
-__all__ = ["get_clipboard_text", "set_clipboard_text"];
+
+def command_help():
+    return "\n".join(key + " : " + desc for key, desc in COMMANDS);
+
+
+def command_list():
+    return COMMANDS[:];

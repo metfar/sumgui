@@ -1,3 +1,8 @@
+# 0.2.0a25
+
+- Route Copy/Paste through the shared sumUI system clipboard service instead of relying on `pygame.scrap`.
+- Treat SDL `KMOD_MODE` as AltGr/ISO_Level3_Shift rather than Alt/Meta so X11/Xmodmap Level-3 and Level-4 Unicode input reaches `TEXTINPUT` unchanged.
+
 # 0.2.0a24
 
 - Added backend-neutral resource-form loading and `sumgdialog --resource/--operation/--values` for graphical create/update/search forms generated from `sumui.ResourceSchema`.

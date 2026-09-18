@@ -19,8 +19,8 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 #  
-#
+import argparse;
+from . import __version__;
 
-from sumui.clipboard import get_clipboard_text, set_clipboard_text;
-
-__all__ = ["get_clipboard_text", "set_clipboard_text"];
+def main(argv=None):
+    parser=argparse.ArgumentParser(prog="sumgui",description="SUM graphical UI backend."); parser.add_argument("--version",action="version",version="sumGUI {}".format(__version__)); parser.parse_args(argv); parser.print_help(); return 0;
