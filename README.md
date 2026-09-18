@@ -431,3 +431,7 @@ picker = fontpicker(40, 40, 460, 84, family="monospace", monospace_only=True)
 selection = picker.selection()
 # FontSelection(family=..., bold=..., italic=..., small_caps=...)
 ```
+
+### FontPicker
+
+`FontPicker` provides an alphabetical searchable font combo, filtered popup scrollbar, Bold/Italic/Small Caps modifiers, optional 50–85% Small Caps scale, and an optional live preview. `FontSelection.small_caps_scale` carries the selected scale without changing source text.

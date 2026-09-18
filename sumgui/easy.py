@@ -398,13 +398,13 @@ def checkbox(text, x, y, w=180, h=34, checked=False, do=None, font_size=None):
     return current.add(CheckBox(current.rect(x, y, w, h), text, use_font, checked=checked, on_change=changed, theme=current.theme));
 
 
-def fontpicker(x, y, w=440, h=84, family="monospace", bold=False, italic=False, small_caps=False, monospace_only=False, do=None, font_size=None):
+def fontpicker(x, y, w=440, h=84, family="monospace", bold=False, italic=False, small_caps=False, small_caps_scale=0.65, monospace_only=False, do=None, font_size=None, show_scale=False, preview=False, preview_size=22):
     current = app();
     use_font = current.make_font(font_size or current.font_size);
     def changed(widget, selection):
         if do is not None:
             do(selection);
-    return current.add(FontPicker(current.rect(x, y, w, h), use_font, family=family, bold=bold, italic=italic, small_caps=small_caps, theme=current.theme, monospace_only=monospace_only, on_change=changed));
+    return current.add(FontPicker(current.rect(x, y, w, h), use_font, family=family, bold=bold, italic=italic, small_caps=small_caps, small_caps_scale=small_caps_scale, theme=current.theme, monospace_only=monospace_only, on_change=changed, show_scale=show_scale, preview=preview, preview_size=preview_size));
 
 
 def slider(label_text, x, y, w, h, minimum=0.0, maximum=1.0, value=0.0, orientation="horizontal", step=None, do=None, font_size=None):

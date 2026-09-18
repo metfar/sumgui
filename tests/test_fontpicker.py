@@ -46,3 +46,12 @@ def test_fontpicker_scrollbar_and_keyboard_can_reach_end():
     picker=_picker(); picker.open_popup(""); picker._scroll_to_offset(0); picker._scroll_by(3); assert picker.offset==3;
     picker.drag_scrollbar=True; picker.drag_scroll_y=picker.scrollbar_thumb_rect().centery; picker.drag_scroll_offset=picker.offset; picker._scrollbar_drag_to(picker.scrollbar_rect().bottom); assert picker.offset==len(picker.filtered_items())-picker.max_rows;
     picker.set_focus(True); picker.highlight=0; picker._ensure_highlight_visible(); picker.handle_event(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_END)); assert picker.highlight==len(picker.filtered_items())-1;
+
+
+
+def test_fontpicker_small_caps_scale_is_part_of_selection():
+    picker=FontPicker(pygame.Rect(10,10,320,220),pygame.font.Font(None,18),family="monospace",items=("monospace","Orator"),small_caps=True,small_caps_scale=0.63,show_scale=True,preview=True);
+    assert picker.selection().small_caps is True;
+    assert picker.selection().small_caps_scale==pytest.approx(0.63);
+    picker.scale_slider.set_value(71,notify=False);
+    assert picker.selection().small_caps_scale==pytest.approx(0.71);

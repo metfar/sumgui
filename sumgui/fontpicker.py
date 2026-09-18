@@ -23,18 +23,28 @@ import pygame;
 
 from .fontcatalog import FontSelection, filter_font_names, sort_font_names, system_font_names;
 from .theme import DEFAULT_THEME;
-from .widgets import CheckBox, TextInput, Widget, draw_clipped_text;
+from .widgets import CheckBox, Slider, TextInput, Widget, draw_clipped_text;
+
+
+DEFAULT_SMALL_CAPS_SCALE=0.65;
 
 
 class FontPicker(Widget):
-    def __init__(self,rect,font,family="monospace",bold=False,italic=False,small_caps=False,theme=None,items=(),monospace_only=False,max_rows=8,on_change=None,tab_index=0):
+    def __init__(self,rect,font,family="monospace",bold=False,italic=False,small_caps=False,small_caps_scale=DEFAULT_SMALL_CAPS_SCALE,theme=None,items=(),monospace_only=False,max_rows=8,on_change=None,tab_index=0,show_scale=False,preview=False,preview_size=22):
         super().__init__(rect,focusable=True,tab_index=tab_index);
         self.font=font; self.theme=theme or DEFAULT_THEME; self.max_rows=max(1,int(max_rows)); self.on_change=on_change;
         self.monospace_only=bool(monospace_only); self.open=False; self.offset=0; self.highlight=0; self.filter_query=""; self.scrollbar_width=16; self.drag_scrollbar=False; self.drag_scroll_y=0; self.drag_scroll_offset=0;
+        self.show_scale=bool(show_scale or preview); self.preview=bool(preview); self.preview_size=max(10,int(preview_size));
         row_h=max(38,self.font.get_height()+16); style_h=max(32,self.font.get_height()+10);
         self.combo_rect=pygame.Rect(self.rect.x,self.rect.y,self.rect.width,row_h);
         self.style_rect=pygame.Rect(self.rect.x,self.combo_rect.bottom+6,self.rect.width,style_h);
-        self.rect.height=(self.style_rect.bottom-self.rect.y);
+        cursor=self.style_rect.bottom;
+        self.scale_rect=None; self.preview_rect=None;
+        if self.show_scale:
+            scale_h=max(44,self.font.get_height()+24); self.scale_rect=pygame.Rect(self.rect.x,cursor+6,self.rect.width,scale_h); cursor=self.scale_rect.bottom;
+        if self.preview:
+            preview_h=max(84,self.font.get_height()*4+10); self.preview_rect=pygame.Rect(self.rect.x,cursor+6,self.rect.width,preview_h); cursor=self.preview_rect.bottom;
+        self.rect.height=(cursor-self.rect.y);
         self.arrow_rect=pygame.Rect(self.combo_rect.right-36,self.combo_rect.y,36,self.combo_rect.height);
         input_rect=pygame.Rect(self.combo_rect.x,self.combo_rect.y,max(1,self.combo_rect.width-36),self.combo_rect.height);
         self.input=TextInput(input_rect,self.font,text=str(family or "monospace"),placeholder="type to filter fonts",max_length=128,theme=self.theme,clear_on_first_edit=True);
@@ -45,6 +55,8 @@ class FontPicker(Widget):
         self.bold_box=CheckBox(self._style_box_rect(0),"Bold",self.font,checked=bold,theme=self.theme,on_change=lambda *_unused:self._notify());
         self.italic_box=CheckBox(self._style_box_rect(1),"Italic",self.font,checked=italic,theme=self.theme,on_change=lambda *_unused:self._notify());
         self.small_caps_box=CheckBox(self._style_box_rect(2),"Small Caps",self.font,checked=small_caps,theme=self.theme,on_change=lambda *_unused:self._notify());
+        percent=max(50.0,min(85.0,float(small_caps_scale)*100.0));
+        self.scale_slider=Slider(self.scale_rect,minimum=50,maximum=85,value=percent,step=1,on_change=lambda *_unused:self._notify(),font=self.font,label="Small Caps scale (%)",theme=self.theme) if self.scale_rect is not None else None;
         self._sync_highlight();
 
     def _style_box_rect(self,index):
@@ -68,19 +80,22 @@ class FontPicker(Widget):
 
     def popup_rect(self):
         rows=min(self.max_rows,len(self.filtered_items()));
-        return pygame.Rect(self.combo_rect.x,self.rect.bottom+2,self.combo_rect.width,max(0,rows*30+4 if rows else 0));
+        return pygame.Rect(self.combo_rect.x,self.combo_rect.bottom+2,self.combo_rect.width,max(0,rows*30+4 if rows else 0));
 
     def get_rect(self):
         popup=self.popup_rect();
         return self.rect.union(popup) if self.open and popup.height>0 else self.rect;
 
+    def small_caps_scale(self):
+        return float(self.scale_slider.value)/100.0 if self.scale_slider is not None else DEFAULT_SMALL_CAPS_SCALE;
+
     def selection(self):
-        return FontSelection(self.selected_family,bool(self.bold_box.checked),bool(self.italic_box.checked),bool(self.small_caps_box.checked));
+        return FontSelection(self.selected_family,bool(self.bold_box.checked),bool(self.italic_box.checked),bool(self.small_caps_box.checked),self.small_caps_scale());
 
     def value(self):
         return self.selected_family;
 
-    def set_selection(self,family=None,bold=None,italic=None,small_caps=None,notify=False):
+    def set_selection(self,family=None,bold=None,italic=None,small_caps=None,small_caps_scale=None,notify=False):
         if family is not None:
             self.selected_family=str(family or "monospace").strip() or "monospace";
             if self.selected_family.casefold() not in {item.casefold() for item in self.items}: self.items=sort_font_names(self.items,current=self.selected_family);
@@ -88,6 +103,7 @@ class FontPicker(Widget):
         if bold is not None: self.bold_box.checked=bool(bold);
         if italic is not None: self.italic_box.checked=bool(italic);
         if small_caps is not None: self.small_caps_box.checked=bool(small_caps);
+        if small_caps_scale is not None and self.scale_slider is not None: self.scale_slider.set_value(float(small_caps_scale)*100.0,notify=False);
         self.filter_query=""; self._sync_highlight();
         if notify: self._notify();
         return self.selection();
@@ -120,6 +136,7 @@ class FontPicker(Widget):
 
     def cancel_pointer(self):
         self.drag_scrollbar=False;
+        if self.scale_slider is not None: self.scale_slider.dragging=False;
         for box in (self.bold_box,self.italic_box,self.small_caps_box): box.cancel_pointer();
         return True;
 
@@ -174,6 +191,55 @@ class FontPicker(Widget):
         row=max(0,(int(pos[1])-area.y)//30); index=self.offset+row;
         return index if index<len(self.filtered_items()) and row<self.max_rows else None;
 
+    def _preview_family(self):
+        visible=self.filtered_items();
+        if self.open and visible and 0<=self.highlight<len(visible): return str(visible[self.highlight]);
+        return str(self.selected_family or "monospace");
+
+    def _preview_font(self,size=None):
+        size=max(8,int(size or self.preview_size)); family=self._preview_family(); bold=bool(self.bold_box.checked); italic=bool(self.italic_box.checked);
+        try: return pygame.font.SysFont(family,size,bold=bold,italic=italic);
+        except TypeError: return pygame.font.SysFont(family,size,bold=bold);
+        except Exception: return pygame.font.Font(None,size);
+
+    @staticmethod
+    def _ink_center_offset(rendered,cell_width):
+        try:
+            bounds=rendered.get_bounding_rect(min_alpha=1);
+            if int(bounds.width)>0: return int(round((int(cell_width)-int(bounds.width))/2.0))-int(bounds.x);
+        except Exception: pass;
+        try: width=int(rendered.get_width());
+        except Exception: width=int(cell_width);
+        return int(round((int(cell_width)-width)/2.0));
+
+    def _draw_preview_line(self,screen,text,y):
+        if self.preview_rect is None: return;
+        normal=self._preview_font(self.preview_size); scale=self.small_caps_scale(); small=self._preview_font(max(6,int(round(self.preview_size*scale))));
+        try: normal_ascent=max(1,int(normal.get_ascent()));
+        except Exception: normal_ascent=max(1,int(normal.get_height()));
+        try: small_ascent=max(1,int(small.get_ascent()));
+        except Exception: small_ascent=max(1,int(small.get_height()));
+        baseline=int(y)+normal_ascent; x=self.preview_rect.x+10; right=self.preview_rect.right-8;
+        fixed_width=None;
+        if self.monospace_only:
+            try: fixed_width=max(normal.size(char)[0] for char in "iMW0@#_");
+            except Exception: fixed_width=None;
+        for char in str(text):
+            use_small=bool(self.small_caps_box.checked and char.islower()); glyph=char;
+            renderer=normal;
+            if use_small:
+                upper=char.upper();
+                if len(upper)==1: glyph=upper; renderer=small;
+                else: use_small=False;
+            rendered=renderer.render(glyph,True,self.theme.text);
+            if fixed_width is not None:
+                advance=fixed_width; xoff=self._ink_center_offset(rendered,advance) if use_small else max(0,(advance-rendered.get_width())//2);
+            else:
+                advance=max(1,normal.size(char.upper() if use_small else char)[0]); xoff=max(0,(advance-rendered.get_width())//2);
+            yoff=baseline-(small_ascent if use_small else normal_ascent);
+            if x+advance>right: break;
+            screen.blit(rendered,(x+xoff,yoff)); x+=advance;
+
     def handle_event(self,event):
         if event.type==pygame.MOUSEBUTTONDOWN:
             if self.arrow_rect.collidepoint(event.pos):
@@ -197,13 +263,16 @@ class FontPicker(Widget):
                 if index is not None and getattr(event,"button",1)==1: self.highlight=index; return self._commit(index);
             for box in (self.bold_box,self.italic_box,self.small_caps_box):
                 if box.rect.collidepoint(event.pos): return box.handle_event(event);
+            if self.scale_slider is not None and self.scale_slider.rect.collidepoint(event.pos): return self.scale_slider.handle_event(event);
             if self.open: self.close_popup(restore=True);
             return self.rect.collidepoint(event.pos);
-        if event.type==pygame.MOUSEMOTION and self.drag_scrollbar:
-            self._scrollbar_drag_to(event.pos[1]); return True;
+        if event.type==pygame.MOUSEMOTION:
+            if self.drag_scrollbar: self._scrollbar_drag_to(event.pos[1]); return True;
+            if self.scale_slider is not None and self.scale_slider.dragging: return self.scale_slider.handle_event(event);
         if event.type==pygame.MOUSEBUTTONUP:
             if self.drag_scrollbar:
                 self.drag_scrollbar=False; return True;
+            if self.scale_slider is not None and self.scale_slider.dragging: return self.scale_slider.handle_event(event);
             for box in (self.bold_box,self.italic_box,self.small_caps_box):
                 if box.handle_event(event): return True;
             return False;
@@ -249,6 +318,12 @@ class FontPicker(Widget):
         pygame.draw.rect(screen,self.theme.button,self.arrow_rect,border_radius=6); pygame.draw.rect(screen,self.theme.line,self.arrow_rect,1,border_radius=6);
         draw_clipped_text(screen,self.font,"▼",self.theme.button_text,self.arrow_rect,align="center",valign="middle");
         self.bold_box.draw(screen); self.italic_box.draw(screen); self.small_caps_box.draw(screen);
+        if self.scale_slider is not None:
+            self.scale_slider.label="Small Caps scale (%)"; self.scale_slider.draw(screen);
+        if self.preview_rect is not None:
+            pygame.draw.rect(screen,self.theme.panel,self.preview_rect,border_radius=6); pygame.draw.rect(screen,self.theme.line,self.preview_rect,1,border_radius=6);
+            title_rect=pygame.Rect(self.preview_rect.x+8,self.preview_rect.y+4,self.preview_rect.width-16,max(16,self.font.get_height())); draw_clipped_text(screen,self.font,"Preview — {}".format(self._preview_family()),self.theme.muted,title_rect,valign="middle");
+            y=self.preview_rect.y+max(22,self.font.get_height()+8); self._draw_preview_line(screen,"ABCDEF abcdef  Σσ Ωω Ññ",y); self._draw_preview_line(screen,"The quick brown fox — 0123456789",y+max(24,self.preview_size+6));
         if not self.open: return;
         visible=self.filtered_items(); popup=self.popup_rect();
         if popup.height<=0: return;

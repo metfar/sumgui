@@ -18,7 +18,7 @@ from sumui.keyboard import pygame_modifier_state;
 def test_altgr_suppresses_synthetic_ctrl_alt_bits():
     fake=SimpleNamespace(KMOD_SHIFT=1,KMOD_CTRL=2,KMOD_ALT=4,KMOD_MODE=8,KMOD_GUI=16);
     state=pygame_modifier_state(2|4|8,fake);
-    assert state == {"shift":False,"ctrl":False,"alt":False,"altgr":True,"gui":False};
+    assert state["shift"] is False; assert state["ctrl"] is False; assert state["alt"] is False; assert state["altgr"] is True; assert state["gui"] is False;
 
 
 def test_shift_altgr_keeps_shift_for_level_four_symbols():
