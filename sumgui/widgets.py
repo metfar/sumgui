@@ -3147,6 +3147,7 @@ class TerminalArea(TextArea):
     def __init__(self, rect, font, text="", theme=None, tab_index=0, show_v_scrollbar=True, show_h_scrollbar=True):
         super().__init__(rect, font, text=text, multiline=True, show_scrollbar=True, editable=False, max_lines=-1, max_cols=-1, theme=theme, show_v_scrollbar=show_v_scrollbar, show_h_scrollbar=show_h_scrollbar, accepts_tab=False, tab_index=tab_index, tab_size=8, syntax=None);
         self.line_colors = [];
+        self._styled_rows = None;
         self.set_cursor_state(CursorState.NORMAL);
         self.terminal_colors = {
             "normal": (220, 220, 220),
@@ -3161,6 +3162,7 @@ class TerminalArea(TextArea):
         self.set_text(text);
 
     def set_text(self, text, color="normal"):
+        self._styled_rows = None;
         self.lines = text.split("\n") if text else [""];
         self.line_colors = [color for _ in self.lines];
         self.cursor_row = len(self.lines) - 1;
@@ -3168,7 +3170,24 @@ class TerminalArea(TextArea):
         self.clear_selection();
         self.scroll_to_bottom();
 
+    def set_styled_rows(self, rows):
+        """Receive BASIC-like per-cell ANSI attributes, without printing escapes.""";
+        self._styled_rows = [list(attrs) for _text, attrs in rows];
+        return self;
+
+    @staticmethod
+    def _ansi_rgb(code, default):
+        palette = ((0, 0, 0), (170, 0, 0), (0, 170, 0), (170, 85, 0),
+                   (0, 0, 170), (170, 0, 170), (0, 170, 170), (170, 170, 170));
+        if code is None: return default;
+        offset = 30 if 30 <= code <= 37 else 40 if 40 <= code <= 47 else 90 if 90 <= code <= 97 else 100;
+        index = code - offset;
+        if not 0 <= index < 8: return default;
+        rgb = palette[index];
+        return tuple(min(255, component + 85) for component in rgb) if offset >= 90 else rgb;
+
     def clear(self):
+        self._styled_rows = None;
         self.lines = [""];
         self.line_colors = ["normal"];
         self.cursor_row = 0;
@@ -3178,6 +3197,7 @@ class TerminalArea(TextArea):
         self.clear_selection();
 
     def append(self, text="", color="normal"):
+        self._styled_rows = None;
         parts = str(text).split("\n");
         if self.lines == [""] and self.line_colors == ["normal"]:
             self.lines = [];
@@ -3269,7 +3289,22 @@ class TerminalArea(TextArea):
                     break;
                 visible = self.visible_text_slice(self.lines[row], cols);
                 y = text_rect.y + index * line_h;
-                draw_clipped_text(screen, self.font, visible, self.color_for_line(row), pygame.Rect(text_rect.x, y, text_rect.width, line_h));
+                if self._styled_rows is None or row >= len(self._styled_rows):
+                    draw_clipped_text(screen, self.font, visible, self.color_for_line(row), pygame.Rect(text_rect.x, y, text_rect.width, line_h));
+                else:
+                    # Character backgrounds and foregrounds are drawn directly on
+                    # the Pygame surface, not fed through terminal escape codes.
+                    char_w = max(1, self.font.size("M")[0]);
+                    attrs = self._styled_rows[row];
+                    for col, char in enumerate(visible):
+                        absolute_col = self.scroll_col + col;
+                        fg, bg = attrs[absolute_col] if absolute_col < len(attrs) else (None, None);
+                        x = text_rect.x + col * char_w;
+                        if x >= text_rect.right: break;
+                        if bg is not None:
+                            pygame.draw.rect(screen, self._ansi_rgb(bg, (0, 0, 0)), (x, y, char_w, line_h));
+                        glyph = self.font.render(char, True, self._ansi_rgb(fg, self.color_for_line(row)));
+                        screen.blit(glyph, (x, y));
         with_clip(screen, text_rect, draw_inside);
         self.draw_scrollbar(screen);
 

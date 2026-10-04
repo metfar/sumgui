@@ -1,4 +1,4 @@
-# SumGUI / ΣGUI 0.2.0a29
+# SumGUI / ΣGUI 0.2.0a30
 A tiny, portable and beginner-friendly GUI toolkit for Python and Pygame.
 
 SumGUI is inspired by the spirit of home computing:
@@ -440,3 +440,7 @@ selection = picker.selection()
 ## FontPicker and scrollable panels (0.2.0a29)
 
 `FontPicker` supports incremental filtering, an internal font-list scrollbar, live preview, Small Caps scale, and independent uppercase/lowercase optical embolden controls.  `ScrollPanel` provides a reusable vertically scrollable container with mouse-wheel, drag-thumb, track paging, keyboard focus visibility, and fixed outer chrome support.
+
+## Coloured text output (0.2.0a30)
+
+ANSI SGR colours are represented as display attributes, not printed escape sequences. TerminalArea supports set_styled_rows() for graphical per-cell foreground/background colours.
