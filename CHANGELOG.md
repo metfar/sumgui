@@ -1,3 +1,5 @@
+- 0.2.0a31: aligned graphical applications with the shared sumUI help contract; Help/About semantics now match TUI applications, and package version metadata is synchronized.
+
 # 0.2.0a27
 
 - FontPicker dropdowns now include a vertical scrollbar tied to the filtered result set.

@@ -1,4 +1,4 @@
-# SumGUI / ΣGUI 0.2.0a30
+# SumGUI / ΣGUI 0.2.0a31
 A tiny, portable and beginner-friendly GUI toolkit for Python and Pygame.
 
 SumGUI is inspired by the spirit of home computing:
@@ -444,3 +444,8 @@ selection = picker.selection()
 ## Coloured text output (0.2.0a30)
 
 ANSI SGR colours are represented as display attributes, not printed escape sequences. TerminalArea supports set_styled_rows() for graphical per-cell foreground/background colours.
+## Shared Help/About behavior
+
+sumGUI consumes the same backend-neutral `sumui.HelpCorpus` used by terminal applications. Function/command help is globally A-Z with a functional example per topic; `About` remains separate application metadata/dialog content. Applications rendered through `GraphicalApplicationBackend` therefore keep the same Help/About structure as their TUI form.
+
+<p align=center><b>- oOo -</b></p>

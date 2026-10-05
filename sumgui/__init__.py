@@ -33,7 +33,7 @@ import os;
 os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1");
 import pygame;
 
-__version__ = "0.2.0a30";
+__version__ = "0.2.0a31";
 
 from .audio import audio_engine, beep, midi_frequency, midi_sound, play, set_audio_engine, sound, stop_audio, tone_pcm_bytes, tone_sound, tone_wav_bytes, wait_audio;
 
@@ -47,7 +47,7 @@ from .scale import Scale;
 from .keymap import KeyMap, default_voxel_keymap;
 from .widgets import Button, CalendarView, CanvasArea, CheckBox, ColorPicker, DateTimeView, EditorView, GridCell, GridWidget, Label, PaletteWidget, Panel, ScrollPanel, Slider, StatusBar, TextArea, TextInput, TerminalArea, TimeView, ToolBar, Widget;
 from .easy import EasyApp;
-from sumui import AxisSpec, BackendCapabilities, ChartSeries, ChartSpec, DialogSpec, FieldSpec, GraphicsCommand, GraphicsMode, GraphicsProgram, ImageSpec, InputSpec, TableSpec, UIEvent, basic_mode, modern_mode, spectrum_mode;
+from sumui import AxisSpec, BackendCapabilities, ChartSeries, ChartSpec, DialogSpec, FieldSpec, GraphicsCommand, GraphicsMode, GraphicsProgram, HelpCorpus, HelpTopic, ImageSpec, InputSpec, TableSpec, UIEvent, basic_mode, load_helpdb, modern_mode, spectrum_mode;
 from .charts import BarChart, ChartView, LineChart, PieChart, ScatterChart;
 from .chart_backends import available_chart_renderers, render_chart_rgba;
 from .tables import TableView;
