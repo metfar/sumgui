@@ -61,3 +61,5 @@ from .voxel import Voxel, VoxelFace, VoxelGridModel, VoxelGridWidgetSpec;
 from .keyrepeat import DOS_FAST_DELAY_MS, DOS_FAST_INTERVAL_MS, KeyRepeatConfig, disable_key_repeat, enable_key_repeat, get_events, process_key_repeat;
 
 from .textscreen import GuiTextScreen;
+
+from .combobox_ext import ComboBox;

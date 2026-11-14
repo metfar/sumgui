@@ -413,10 +413,10 @@ def scrollpanel(x, y, w, h, content_height=None, scrollbar_width=16, wheel_step=
     height=current.h(content_height) if content_height is not None else None;
     return current.add(ScrollPanel(current.rect(x,y,w,h),content_height=height,theme=current.theme,scrollbar_width=max(12,current.w(scrollbar_width)),wheel_step=max(1,current.h(wheel_step))));
 
-def slider(label_text, x, y, w, h, minimum=0.0, maximum=1.0, value=0.0, orientation="horizontal", step=None, do=None, font_size=None):
+def slider(label_text, x, y, w, h, minimum=0.0, maximum=1.0, value=0.0, orientation="horizontal", step=None, do=None, font_size=None, compact=False, show_value=True):
     current = app();
     use_font = current.make_font(font_size or current.font_size);
-    return current.add(Slider(current.rect(x, y, w, h), minimum, maximum, value, orientation, step, do, use_font, label_text, current.theme));
+    return current.add(Slider(current.rect(x, y, w, h), minimum, maximum, value, orientation, step, do, use_font, label_text, current.theme, compact=compact, show_value=show_value));
 
 
 def rect(x, y, w, h):

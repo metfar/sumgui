@@ -2652,7 +2652,7 @@ class ColorPicker(Widget):
 
 
 class Slider(Widget):
-    def __init__(self, rect, minimum=0.0, maximum=1.0, value=0.0, orientation="horizontal", step=None, on_change=None, font=None, label="", theme=None, tab_index=0):
+    def __init__(self, rect, minimum=0.0, maximum=1.0, value=0.0, orientation="horizontal", step=None, on_change=None, font=None, label="", theme=None, tab_index=0, compact=False, show_value=True):
         super().__init__(rect, focusable=True, tab_index=tab_index);
         self.minimum = float(minimum);
         self.maximum = float(maximum);
@@ -2662,6 +2662,8 @@ class Slider(Widget):
         self.on_change = on_change;
         self.font = font;
         self.label = label;
+        self.compact = bool(compact);
+        self.show_value = bool(show_value);
         self.theme = theme or DEFAULT_THEME;
         self.dragging = False;
         self.value = self.clamp_value(self.value);
@@ -2817,7 +2819,30 @@ class Slider(Widget):
             if cursor_x > rect.right:
                 break;
 
+    def _draw_compact(self, screen):
+        pygame.draw.rect(screen, self.theme.panel, self.rect, border_radius=6);
+        pygame.draw.rect(screen, self.theme.cursor if self.has_focus else self.theme.line,
+                         self.rect, 2, border_radius=6);
+        value_text="{:.2f}".format(self.value).rstrip("0").rstrip(".");
+        value_width=78 if self.show_value and self.font else 0;
+        track=pygame.Rect(self.rect.x+16, self.rect.centery-4,
+                          max(8,self.rect.width-value_width-40),8);
+        pygame.draw.rect(screen, self.theme.line, track);
+        pygame.draw.rect(screen, self.theme.button,
+                         pygame.Rect(track.x,track.y,int(track.width*self.fraction()),track.height));
+        knob_x=track.x+int(self.fraction()*max(1,track.width));
+        knob=pygame.Rect(knob_x-8,self.rect.centery-13,16,26);
+        pygame.draw.rect(screen,self.theme.button,knob,border_radius=5);
+        pygame.draw.rect(screen,self.theme.text,knob,2,border_radius=5);
+        if value_width and self.font is not None:
+            box=pygame.Rect(track.right+10,self.rect.y+4,value_width,self.rect.height-8);
+            draw_clipped_text(screen,self.font,value_text,self.theme.text,box,
+                              align="center",valign="middle");
+
     def draw(self, screen):
+        if self.compact:
+            self._draw_compact(screen);
+            return None;
         pygame.draw.rect(screen, self.theme.panel, self.rect, border_radius=8);
         pygame.draw.rect(screen, self.theme.cursor if self.has_focus else self.theme.line, self.rect, 3 if self.has_focus else 2, border_radius=8);
         def draw_inside():
