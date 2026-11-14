@@ -16,7 +16,7 @@ from sumui.selection_models import ComboModel;
 
 class ComboBox(Widget):
     def __init__(self, rect, app, entries=(), value=None, mode="selection", validator=None,
-                 on_change=None, rows=7, tab_index=0):
+                 on_change=None, rows=7, tab_index=0, texts=None):
         super().__init__(rect, focusable=True, tab_index=tab_index);
         self.app = app;
         self.theme = app.theme;
@@ -25,6 +25,7 @@ class ComboBox(Widget):
         self.on_change = on_change;
         self.rows = max(1, int(rows));
         self.invalid_message = "";
+        self.texts = dict(texts or {});
 
     @property
     def value(self):
@@ -218,7 +219,7 @@ class _ComboPopup(Widget):
     def draw(self, screen):
         pygame.draw.rect(screen, self.theme.panel, self.popup, border_radius=5);
         pygame.draw.rect(screen, self.theme.line, self.popup, 2, border_radius=5);
-        search = self.query or "Escribir para buscar...";
+        search = self.query or self.combo.texts.get("placeholder", "Type to search...");
         text_rect = pygame.Rect(self.popup.x + 10, self.popup.y + 3,
                                 self.popup.width - 20, self.row_height - 4);
         draw_clipped_text(screen, self.font, search, self.theme.text if self.query else self.theme.muted,
