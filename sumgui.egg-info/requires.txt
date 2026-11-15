@@ -1,5 +1,5 @@
 sumcore>=0.1.0a13
-sumui>=0.1.0a21
+sumui>=0.1.0a22
 pygame>=2.0
 
 [charts]

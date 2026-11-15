@@ -12,6 +12,7 @@
 
 import argparse;
 from sumui.cli import SumArgumentParser;
+from sumui.theme_preferences import preferred_theme;
 import sys;
 
 import pygame;
@@ -50,7 +51,7 @@ def build_parser():
     parser.add_argument("--no-confirm", dest="confirm", action="store_false");
     parser.add_argument("--operation", choices=("create", "update", "search"), default="create", help="operation used by --resource; default create");
     parser.add_argument("--values", default=None, help="JSON object or JSON file with initial values for --resource");
-    parser.add_argument("--theme", default="ZX");
+    parser.add_argument("--theme", default=None);
     parser.add_argument("--width", type=int, default=720);
     parser.add_argument("--height", type=int, default=480);
     parser.add_argument("--version", action="version", version="sumgdialog {}".format(__version__));
@@ -150,13 +151,14 @@ def main(argv=None):
     screen = pygame.display.set_mode((width, height));
     pygame.display.set_caption(args.title);
     clock = pygame.time.Clock();
-    theme = make_theme(args.theme);
+    selected_theme = args.theme or preferred_theme("sumgdialog");
+    theme = make_theme(selected_theme);
     try:
         if args.demo:
             return _run_demo(screen, clock, theme);
         if args.resource is not None:
             import json;
-            spec = load_resource_dialog(args.resource, operation=args.operation, values=args.values, theme=args.theme, title=(args.title if args.title != "sumgdialog" else None));
+            spec = load_resource_dialog(args.resource, operation=args.operation, values=args.values, theme=selected_theme, title=(args.title if args.title != "sumgdialog" else None));
             value = form_box(screen, clock, spec, theme=theme);
             if value is None: return 1;
             sys.stdout.write(json.dumps(value, ensure_ascii=False, sort_keys=True) + "\n");

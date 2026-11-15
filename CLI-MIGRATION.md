@@ -1,4 +1,4 @@
-# SUM CLI migration — sumgui 0.2.0a32
+# SUM CLI migration — sumgui 0.2.0a33
 
 The command-line entry points in this local development snapshot adopt the
 `sumui.cli.SumArgumentParser` contract where appropriate, retaining historical

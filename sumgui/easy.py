@@ -32,6 +32,7 @@ from .keyrepeat import enable_key_repeat, get_events;
 from .eventbridge import is_focus_loss, touch_to_mouse_event;
 from .display import fit_window_size;
 from .scale import Scale;
+from sumui.theme_preferences import preferred_theme;
 from .theme import DEFAULT_THEME, make_theme;
 from .commands import command_help, command_list;
 from .fontpicker import FontPicker;
@@ -189,7 +190,7 @@ class EasyApp:
         self.scale_mode = scale_mode;
         self.fullscreen = bool(fullscreen);
         self.fit_display = bool(fit_display);
-        self.theme = make_theme(theme) if isinstance(theme, str) else (theme or DEFAULT_THEME);
+        self.theme = make_theme(theme) if isinstance(theme, str) else (theme or make_theme(preferred_theme(self.title)));
         if self.fullscreen:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN);
             self.width, self.height = self.screen.get_size();

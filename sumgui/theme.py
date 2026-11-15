@@ -103,6 +103,45 @@ class Theme:
         return self.viewer_text if role.startswith("syntax_") else self.text;
 
 
+def _user_theme(name):
+    """Resolve a user-created SUM theme without depending on sumTUI.""";
+    import json;
+    from sumui.theme_preferences import config_base;
+    directory = config_base() / "sumtui" / "themes";
+    if not directory.is_dir():
+        return None;
+    for file in directory.glob("*.json"):
+        if file.name.startswith("."):
+            continue;
+        try:
+            data = json.loads(file.read_text(encoding="utf-8"));
+        except (OSError, ValueError, TypeError):
+            continue;
+        if str(data.get("name") or "").casefold() != str(name).casefold():
+            continue;
+        colors = data.get("colors", {});
+        if not isinstance(colors, dict):
+            return None;
+        def rgb(value, default):
+            if isinstance(value, str) and len(value) == 7 and value.startswith("#"):
+                try:
+                    return tuple(int(value[i:i + 2], 16) for i in (1, 3, 5));
+                except ValueError:
+                    pass;
+            if isinstance(value, (tuple, list)) and len(value) == 3:
+                try:
+                    return tuple(max(0, min(255, int(item))) for item in value);
+                except (TypeError, ValueError):
+                    pass;
+            return default;
+        base = make_theme("ZX");
+        result = Theme(name=str(data["name"]));
+        for key in ("bg", "panel", "line", "text", "muted", "button", "button_alt", "button_text", "error", "cursor", "selection_bg", "selection_text", "title", "viewer_bg", "viewer_text"):
+            setattr(result, key, rgb(colors.get(key), getattr(base, key)));
+        return result;
+    return None;
+
+
 def make_theme(name="ZX"):
     key = str(name).strip().casefold();
     if key in ("zx", "spectrum", "sinclair"):
@@ -117,6 +156,9 @@ def make_theme(name="ZX"):
         return Theme("Light", (245, 245, 245), (255, 255, 255), (80, 80, 80), (20, 20, 20), (90, 90, 90), (70, 130, 220), (220, 220, 220), (255, 255, 255), (200, 40, 40), (0, 90, 180), SPECTRUM_COLORS);
     if key == "dark":
         return Theme("Dark", (10, 30, 32), (28, 48, 54), (55, 75, 85), (235, 245, 250), (130, 150, 155), (140, 220, 40), (60, 100, 120), (10, 25, 30), (255, 100, 100), (255, 255, 0), SPECTRUM_COLORS);
+    custom = _user_theme(name);
+    if custom is not None:
+        return custom;
     return Theme("ZX", (0, 0, 0), (0, 0, 90), (0, 255, 255), (255, 255, 255), (0, 205, 205), (255, 255, 0), (0, 0, 205), (0, 0, 0), (255, 80, 80), (255, 255, 0), SPECTRUM_COLORS);
 
 
