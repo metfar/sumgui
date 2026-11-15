@@ -11,6 +11,7 @@
 #  
 
 import argparse;
+from sumui.cli import SumArgumentParser;
 import sys;
 
 import pygame;
@@ -30,7 +31,7 @@ def _values(text):
 
 
 def build_parser():
-    parser = argparse.ArgumentParser(prog="sumgdialog", description="Graphical counterpart to sumdialog using SumGUI/Pygame.");
+    parser = SumArgumentParser(prog="sumgdialog", description="Graphical counterpart to sumdialog using SumGUI/Pygame.");
     mode = parser.add_mutually_exclusive_group(required=True);
     mode.add_argument("--info", metavar="TEXT");
     mode.add_argument("--warning", metavar="TEXT");

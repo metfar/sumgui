@@ -28,6 +28,8 @@ import json;
 import math;
 import os;
 import sys;
+from sumui.cli import SumArgumentParser;
+from sumgui import __version__ as _sumgui_version;
 
 import pygame;
 
@@ -1511,7 +1513,9 @@ class UDGApp:
         pygame.quit();
 
 
-def main():
+def main(argv=None):
+    parser = SumArgumentParser(prog="sumudg", description="SUM graphical ZX Spectrum UDG painter", version=_sumgui_version);
+    parser.parse_args(argv);
     app = UDGApp();
     app.run();
 

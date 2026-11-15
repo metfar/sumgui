@@ -20,7 +20,8 @@
 #  MA 02110-1301, USA.
 #  
 import argparse;
+from sumui.cli import SumArgumentParser;
 from . import __version__;
 
 def main(argv=None):
-    parser=argparse.ArgumentParser(prog="sumgui",description="SUM graphical UI backend."); parser.add_argument("--version",action="version",version="sumGUI {}".format(__version__)); parser.parse_args(argv); parser.print_help(); return 0;
+    parser=SumArgumentParser(prog="sumgui",description="SUM graphical UI backend."); parser.add_argument("--version",action="version",version="sumGUI {}".format(__version__)); parser.parse_args(argv); parser.print_help(); return 0;
